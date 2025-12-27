@@ -78,35 +78,6 @@ npm install
 
 ```
 
-### Configuration
-
-Define your brand DNA in `brand_rules.json`:
-
-```json
-{
-  "brandName": "RetailBrandX",
-  "preferredPlacements": {
-    "logo": "top-right",
-    "badge": "bottom-left"
-  },
-  "typography": {
-    "headlineFont": "Inter-Bold",
-    "ctaColor": "#E60000"
-  },
-  "brandRules": {
-    "logo": {
-      "primaryColor": "#E60000",
-      "secondaryColor": "#E60000",
-      "font": "Inter-Bold",
-      "ctaFont": "Inter-Bold",
-      "logoPosition": "top-right",
-      "productScale": 0.55
-    }
-  }
-}
-
-```
-
 ---
 
 ## 🚦 Design Logic (The "Brain")
