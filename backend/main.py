@@ -22,6 +22,9 @@ async def extract(
     sub_message: str = Form(...),
     cta_text: str = Form(...),
     style: str = Form("clean"),
+    background_color: str = Form(None),
+    badge_color: str = Form(None),
+    badge_shape: str = Form(None),
 ):
     """
     Normalize all user input into ONE spec.
@@ -33,6 +36,9 @@ async def extract(
         "sub_message": sub_message.strip(),
         "cta_text": cta_text.strip(),
         "style": style.strip() or "clean",
+        "background_color": background_color.strip() if background_color else None,
+        "badge_color": badge_color.strip() if badge_color else None,
+        "badge_shape": badge_shape.strip() if badge_shape else None,
     }
 
     return spec

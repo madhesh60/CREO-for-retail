@@ -1,5 +1,7 @@
 import os
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageColor
+import random
+import math
 from background_removal import remove_bg
 
 # --- ASSETS SETUP ---
@@ -43,25 +45,56 @@ def add_shadow(img, offset=(0, 10), blur_radius=15, shadow_color=(0, 0, 0, 80)):
     # Crop back to reasonable relative size or return the large layer and offset
     return shadow_layer, padding//2
 
-def draw_premium_badge(draw, center, text, radius):
-    """Draws a gold, premium-looking circular badge."""
+def draw_premium_badge(draw, center, text, radius, shape="circle", hex_color=None):
+    """Draws a premium-looking badge with dynamic shape and color."""
     x, y = center
     
-    # Gold Palette
-    gold_outer = (218, 165, 32)
-    gold_inner = (255, 215, 0)
-    
-    # Outer ring
-    draw.ellipse(
-        [x - radius, y - radius, x + radius, y + radius],
-        fill=gold_outer
-    )
-    # Inner circle
-    inset = 4
-    draw.ellipse(
-        [x - radius + inset, y - radius + inset, x + radius - inset, y + radius - inset],
-        fill=gold_inner
-    )
+    # Palette
+    if hex_color:
+        try:
+            primary_color = ImageColor.getrgb(hex_color)
+            # Create a lighter/darker version for gradient effect (simplified)
+            # Just use the color provided
+            fill_color = primary_color
+            border_color = (255, 255, 255) # White border for contrast
+        except ValueError:
+             # Fallback to Gold
+            fill_color = (218, 165, 32)
+            border_color = (255, 215, 0)
+    else:
+        # Default Gold
+        fill_color = (218, 165, 32)
+        border_color = (255, 215, 0)
+
+    # Draw Shape
+    if shape == "square":
+        # Rounded square
+        r = radius
+        draw.rounded_rectangle(
+            [x - r, y - r, x + r, y + r],
+            radius=r*0.2,
+            fill=fill_color,
+            outline=border_color,
+            width=3
+        )
+    elif shape == "hexagon":
+        # Hexagon points
+        points = []
+        for i in range(6):
+            angle_deg = 60 * i - 30 
+            angle_rad = math.pi / 180 * angle_deg
+            px = x + radius * math.cos(angle_rad)
+            py = y + radius * math.sin(angle_rad)
+            points.append((px, py))
+        draw.polygon(points, fill=fill_color, outline=border_color)
+    else:
+        # Circle (Default)
+        draw.ellipse(
+            [x - radius, y - radius, x + radius, y + radius],
+            fill=fill_color,
+            outline=border_color,
+            width=3
+        )
     
     # Text
     font_size = int(radius * 0.4)
@@ -69,16 +102,19 @@ def draw_premium_badge(draw, center, text, radius):
     
     # Word wrap manually for badge (max 2 lines usually)
     words = text.split()
+    
+    # Contrast text color based on brightness? Simplify to white or dark.
+    # If gold (default), dark text looks good. If custom color, white text is usually safer for vibrant colors.
+    text_color = (50, 40, 0) if not hex_color else (255, 255, 255)
+
     if len(words) > 1:
         line1 = " ".join(words[:len(words)//2 + 1])
         line2 = " ".join(words[len(words)//2 + 1:])
         
-        # Draw lines centered
-        # Ascent/Descent calculation is complex, simplified centering:
-        draw.text((x, y - font_size*0.6), line1.upper(), anchor="mm", fill=(50, 40, 0), font=font)
-        draw.text((x, y + font_size*0.6), line2.upper(), anchor="mm", fill=(50, 40, 0), font=font)
+        draw.text((x, y - font_size*0.6), line1.upper(), anchor="mm", fill=text_color, font=font)
+        draw.text((x, y + font_size*0.6), line2.upper(), anchor="mm", fill=text_color, font=font)
     else:
-        draw.text((x, y), text.upper(), anchor="mm", fill=(50, 40, 0), font=font)
+        draw.text((x, y), text.upper(), anchor="mm", fill=text_color, font=font)
 
 
 def compose_creative(bg, product, logo, spec, fmt):
@@ -153,7 +189,20 @@ def compose_creative(bg, product, logo, spec, fmt):
     bx = max(bx, badge_radius + 20)
     
     if spec["cta_text"]:
-        draw_premium_badge(draw, (bx, by), spec["cta_text"], badge_radius)
+        # Pick dynamic badge if not specified
+        b_shape = spec.get("badge_shape")
+        if not b_shape:
+            b_shape = random.choice(["circle", "square", "hexagon"])
+            
+        b_color = spec.get("badge_color") 
+        # If no color specified, maybe random vibrant color? 
+        # Or keep default gold if not playing with colors.
+        # User asked: "batches and the format should be dynamic", implies variety.
+        # if not b_color:
+        #    b_color = random.choice(["#ff0055", "#0055ff", "#22cc55", "#ffaa00"]) 
+        # Leaving default as gold for safety unless specified, but shape varies.
+
+        draw_premium_badge(draw, (bx, by), spec["cta_text"], badge_radius, shape=b_shape, hex_color=b_color)
     
     # --- 4. TEXT ---
     main_msg = spec["main_message"]
