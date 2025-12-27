@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pillow
+numpy
+opencv-python
+scikit-learn
+rembg
+easyocr
+pdfplumber
+python-multipart
