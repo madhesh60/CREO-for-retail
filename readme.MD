@@ -1,6 +1,6 @@
 # 🎯 CREO AI: Logic-Driven Creative Engine
 
-**CREO AI** is a specialized design automation platform that replaces manual resizing and layout guesswork with **Retail-Correct Logic**. Unlike generic AI image generators that create unpredictable "art," CREO AI   functions as a digital senior designer—enforcing brand rules, visual hierarchy, and format-aware composition for market-ready assets.
+**CREO AI** is a specialized design automation platform that replaces manual resizing and layout guesswork with **Retail-Correct Logic**. Unlike generic AI image generators that create unpredictable "art," CREO AI   functions as a digital senior designer—enforcing brand rules, visual hierarchy, and format-aware composition for market-ready a
 
 ---
 

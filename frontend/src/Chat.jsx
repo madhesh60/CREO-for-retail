@@ -1,7 +1,11 @@
+// Chat.jsx
 import { useState } from "react";
 import { extractSpec, generateImages } from "./api";
+import { useAuth } from "./AuthContext";
+import styles from "./styles.js";
 
 export default function Chat() {
+  const { token, addColor, user } = useAuth();
   const [form, setForm] = useState({
     main_message: "",
     sub_message: "",
@@ -40,7 +44,7 @@ export default function Chat() {
       const spec = await extractSpec(extractData);
 
       // -------- STEP 2: GENERATE --------
-      const outputs = await generateImages(spec, product, logo);
+      const outputs = await generateImages(spec, product, logo, token);
       setImages(outputs);
 
     } catch (e) {
@@ -52,230 +56,198 @@ export default function Chat() {
   };
 
   return (
-    <div style={styles.app}>
-      <h1 style={styles.title}>Retail Creative Builder</h1>
-
-      <div style={styles.panel}>
-        <div style={styles.sectionTitle}>Content</div>
-        <input
-          name="main_message"
-          placeholder="Main Message"
-          value={form.main_message}
-          onChange={handleChange}
-          style={styles.input}
-        />
-
-        <input
-          name="sub_message"
-          placeholder="Sub Message"
-          value={form.sub_message}
-          onChange={handleChange}
-          style={styles.input}
-        />
-
-        <input
-          name="cta_text"
-          placeholder="CTA (Badge Text)"
-          value={form.cta_text}
-          onChange={handleChange}
-          style={styles.input}
-        />
-
-        <input
-          name="style"
-          placeholder="Style (clean / bold)"
-          value={form.style}
-          onChange={handleChange}
-          style={styles.input}
-        />
-
-        <div style={styles.sectionTitle}>Customization</div>
-
-        <div style={styles.row}>
-          <div style={styles.col}>
-            <label style={styles.label}>Background Color</label>
-            <div style={styles.colorWrapper}>
-              <input
-                type="color"
-                name="background_color"
-                value={form.background_color}
-                onChange={handleChange}
-                style={styles.colorInput}
-              />
-              <span style={styles.colorValue}>{form.background_color}</span>
-            </div>
+    <>
+      <div style={styles.hero}>
+        <div style={styles.heroContent}>
+          <div style={styles.illustration}>
+            {/* Improved SVG illustration matching the reference: line art llama with VR headset, waving */}
+            <svg viewBox="0 0 200 250" style={styles.illustrationSvg} xmlns="http://www.w3.org/2000/svg">
+              {/* Body */}
+              <ellipse cx="100" cy="140" rx="60" ry="70" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              {/* Head */}
+              <circle cx="100" cy="70" r="40" fill="none" stroke="currentColor" strokeWidth="2" />
+              {/* Ears */}
+              <path d="M70 50 Q60 30 80 40" fill="none" stroke="currentColor" strokeWidth="2" />
+              <path d="M130 50 Q140 30 120 40" fill="none" stroke="currentColor" strokeWidth="2" />
+              {/* Eyes */}
+              <circle cx="85" cy="65" r="4" fill="none" stroke="currentColor" strokeWidth="1" />
+              <circle cx="115" cy="65" r="4" fill="none" stroke="currentColor" strokeWidth="1" />
+              {/* Mouth/Smile */}
+              <path d="M90 85 Q100 95 110 85" fill="none" stroke="currentColor" strokeWidth="2" />
+              {/* Neck */}
+              <path d="M100 110 L100 120" stroke="currentColor" strokeWidth="3" />
+              {/* Legs */}
+              <line x1="70" y1="190" x2="70" y2="220" stroke="currentColor" strokeWidth="3" />
+              <line x1="130" y1="190" x2="130" y2="220" stroke="currentColor" strokeWidth="3" />
+              <line x1="50" y1="190" x2="50" y2="220" stroke="currentColor" strokeWidth="3" />
+              <line x1="150" y1="190" x2="150" y2="220" stroke="currentColor" strokeWidth="3" />
+              {/* Tail */}
+              <path d="M40 140 Q20 160 40 180" fill="none" stroke="currentColor" strokeWidth="2" />
+              {/* Headset */}
+              <ellipse cx="100" cy="50" rx="50" ry="8" fill="none" stroke="currentColor" strokeWidth="2" />
+              <circle cx="60" cy="50" r="6" fill="none" stroke="currentColor" strokeWidth="1" />
+              <circle cx="140" cy="50" r="6" fill="none" stroke="currentColor" strokeWidth="1" />
+              {/* VR Glasses */}
+              <rect x="80" y="60" width="40" height="12" rx="6" fill="none" stroke="currentColor" strokeWidth="2" />
+              <line x1="80" y1="66" x2="120" y2="66" stroke="currentColor" strokeWidth="1" />
+              {/* Mic */}
+              <path d="M140 70 Q150 80 140 90" fill="none" stroke="currentColor" strokeWidth="1" />
+              {/* Waving Arm */}
+              <path d="M160 120 Q180 140 160 160" fill="none" stroke="currentColor" strokeWidth="3" />
+              <circle cx="160" cy="140" r="3" fill="none" stroke="currentColor" strokeWidth="1" />
+              {/* Cloud base */}
+              <path d="M20 230 Q50 210 80 230 Q110 210 140 230 Q170 210 200 230" fill="none" stroke="currentColor" strokeWidth="2" />
+            </svg>
           </div>
+          <div style={styles.heroText}>
+            <p style={styles.heroSubtitle}>Cloud models are now available in Ollama</p>
+            <h1 style={styles.heroTitle}>Chat & build with<br />open models</h1>
+          </div>
+        </div>
 
-          <div style={styles.col}>
-            <label style={styles.label}>Badge Color</label>
-            <div style={styles.colorWrapper}>
+        <div style={styles.panel}>
+          <div style={styles.formGrid}>
+            <div style={styles.sectionTitle}>Content</div>
+
+            <div style={styles.fullWidth}>
+              <label style={styles.label}>Main Message</label>
               <input
-                type="color"
-                name="badge_color"
-                value={form.badge_color}
+                name="main_message"
+                placeholder="e.g. Summer Sale"
+                value={form.main_message}
                 onChange={handleChange}
-                style={styles.colorInput}
+                style={styles.input}
               />
-              <span style={styles.colorValue}>{form.badge_color}</span>
+            </div>
+
+            <div style={styles.fullWidth}>
+              <label style={styles.label}>Sub Message</label>
+              <input
+                name="sub_message"
+                placeholder="e.g. Up to 50% Off"
+                value={form.sub_message}
+                onChange={handleChange}
+                style={styles.input}
+              />
+            </div>
+
+            <div>
+              <label style={styles.label}>CTA Text</label>
+              <input
+                name="cta_text"
+                placeholder="e.g. Shop Now"
+                value={form.cta_text}
+                onChange={handleChange}
+                style={styles.input}
+              />
+            </div>
+
+            <div>
+              <label style={styles.label}>Style</label>
+              <input
+                name="style"
+                placeholder="clean / bold"
+                value={form.style}
+                onChange={handleChange}
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.sectionTitle}>Customization</div>
+
+            <div>
+              <label style={styles.label}>Background Color</label>
+              <div style={styles.colorWrapper}>
+                <input
+                  type="color"
+                  name="background_color"
+                  value={form.background_color}
+                  onChange={handleChange}
+                  style={styles.colorInput}
+                />
+                <span style={styles.colorValue}>{form.background_color}</span>
+                {user && (
+                  <button
+                    onClick={() => addColor(form.background_color)}
+                    title="Save to my colors"
+                    style={{
+                      border: 'none',
+                      background: 'none',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      padding: '0 4px',
+                      opacity: 0.6
+                    }}
+                  >
+                    💾
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label style={styles.label}>Badge Color</label>
+              <div style={styles.colorWrapper}>
+                <input
+                  type="color"
+                  name="badge_color"
+                  value={form.badge_color}
+                  onChange={handleChange}
+                  style={styles.colorInput}
+                />
+                <span style={styles.colorValue}>{form.badge_color}</span>
+              </div>
+            </div>
+
+            <div style={styles.fullWidth}>
+              <label style={styles.label}>Badge Shape</label>
+              <select
+                name="badge_shape"
+                value={form.badge_shape}
+                onChange={handleChange}
+                style={styles.select}
+              >
+                <option value="">Random (Dynamic)</option>
+                <option value="circle">Circle</option>
+                <option value="square">Square</option>
+                <option value="hexagon">Hexagon</option>
+              </select>
+            </div>
+
+            <div style={styles.sectionTitle}>Assets</div>
+
+            <div>
+              <label style={styles.label}>Product Image</label>
+              <input type="file" onChange={(e) => setProduct(e.target.files[0])} style={styles.fileInput} />
+            </div>
+
+            <div>
+              <label style={styles.label}>Logo Image</label>
+              <input type="file" onChange={(e) => setLogo(e.target.files[0])} style={styles.fileInput} />
+            </div>
+
+            <div style={styles.fullWidth}>
+              <button style={styles.button} onClick={generate}>
+                {loading ? <div className="spinner" style={{ width: '20px', height: '20px', borderTopColor: '#fff' }}></div> : "Generate Create"}
+              </button>
             </div>
           </div>
         </div>
 
-        <label style={styles.label}>Badge Shape</label>
-        <select
-          name="badge_shape"
-          value={form.badge_shape}
-          onChange={handleChange}
-          style={styles.select}
-        >
-          <option value="">Random (Dynamic)</option>
-          <option value="circle">Circle</option>
-          <option value="square">Square</option>
-          <option value="hexagon">Hexagon</option>
-        </select>
-
-        <div style={styles.sectionTitle}>Assets</div>
-        <label style={styles.label}>Product Image</label>
-        <input type="file" onChange={(e) => setProduct(e.target.files[0])} />
-
-        <label style={styles.label}>Logo Image</label>
-        <input type="file" onChange={(e) => setLogo(e.target.files[0])} />
-
-        <button style={styles.button} onClick={generate}>
-          {loading ? "Generating..." : "Generate Creatives"}
-        </button>
+        {images && (
+          <div style={styles.gallery}>
+            {Object.entries(images).map(([fmt, img]) => (
+              <div key={fmt} style={styles.card}>
+                <h3 style={styles.cardTitle}>{fmt}</h3>
+                <img
+                  src={`data:image/png;base64,${img}`}
+                  style={styles.image}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-
-      {images && (
-        <div style={styles.gallery}>
-          {Object.entries(images).map(([fmt, img]) => (
-            <div key={fmt} style={styles.card}>
-              <h3>{fmt}</h3>
-              <img
-                src={`data:image/png;base64,${img}`}
-                style={styles.image}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    </>
   );
 }
-
-const styles = {
-  app: {
-    background: "#0b0b0c",
-    color: "#fff",
-    minHeight: "100vh",
-    padding: 32,
-    fontFamily: "Inter, system-ui",
-  },
-  title: {
-    marginBottom: 24,
-  },
-  panel: {
-    background: "#151518",
-    padding: 24,
-    borderRadius: 12,
-    maxWidth: 520,
-    border: "1px solid #222",
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#eee",
-    marginBottom: 8,
-    marginTop: 16,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  input: {
-    width: "100%",
-    padding: 10,
-    marginBottom: 12,
-    background: "#0f0f12",
-    color: "#fff",
-    border: "1px solid #333",
-    borderRadius: 6,
-    fontSize: 14,
-  },
-  select: {
-    width: "100%",
-    padding: 10,
-    marginBottom: 12,
-    background: "#0f0f12",
-    color: "#fff",
-    border: "1px solid #333",
-    borderRadius: 6,
-    fontSize: 14,
-    cursor: "pointer",
-  },
-  row: {
-    display: "flex",
-    gap: 16,
-    marginBottom: 12,
-  },
-  col: {
-    flex: 1,
-  },
-  colorWrapper: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    background: "#0f0f12",
-    padding: 8,
-    borderRadius: 6,
-    border: "1px solid #333",
-  },
-  colorInput: {
-    border: "none",
-    width: 30,
-    height: 30,
-    padding: 0,
-    background: "transparent",
-    cursor: "pointer",
-  },
-  colorValue: {
-    fontSize: 13,
-    color: "#aaa",
-    fontFamily: "monospace",
-  },
-  label: {
-    marginTop: 0,
-    marginBottom: 6,
-    display: "block",
-    fontSize: 13,
-    color: "#aaa",
-  },
-  button: {
-    marginTop: 24,
-    width: "100%",
-    padding: 14,
-    background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-    border: "none",
-    color: "#fff",
-    fontWeight: 600,
-    borderRadius: 8,
-    cursor: "pointer",
-    fontSize: 16,
-    transition: "transform 0.1s",
-  },
-  gallery: {
-    marginTop: 40,
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-    gap: 24,
-  },
-  card: {
-    background: "#151518",
-    padding: 16,
-    borderRadius: 12,
-    border: "1px solid #222",
-  },
-  image: {
-    width: "100%",
-    borderRadius: 8,
-    marginTop: 12,
-  },
-};

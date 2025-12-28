@@ -8,3 +8,7 @@ rembg
 easyocr
 pdfplumber
 python-multipart
+motor
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt==3.2.0

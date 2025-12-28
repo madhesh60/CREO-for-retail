@@ -13,14 +13,20 @@ export async function extractSpec(formData) {
   return await res.json();
 }
 
-export async function generateImages(spec, productFile, logoFile) {
+export async function generateImages(spec, productFile, logoFile, token) {
   const formData = new FormData();
   formData.append("spec", JSON.stringify(spec));
   formData.append("product_image", productFile);
   formData.append("logo_image", logoFile);
 
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_BASE}/generate-images`, {
     method: "POST",
+    headers: headers,
     body: formData
   });
 

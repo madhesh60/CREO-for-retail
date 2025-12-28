@@ -2,7 +2,8 @@ from PIL import Image
 try:
     from rembg import remove
     HAS_REMBG = True
-except ImportError:
+except Exception as e:
+    print(f"Warning: rembg could not be imported: {e}")
     HAS_REMBG = False
 
 def remove_bg_simple(img: Image.Image, bg_color=(255, 255, 255), tol=20):
