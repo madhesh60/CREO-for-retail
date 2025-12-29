@@ -100,8 +100,7 @@ export default function Chat() {
             </svg>
           </div>
           <div style={styles.heroText}>
-            <p style={styles.heroSubtitle}>Cloud models are now available in Ollama</p>
-            <h1 style={styles.heroTitle}>Chat & build with<br />open models</h1>
+            <h1 style={styles.heroTitle}>AI Retail Creative<br />Studio</h1>
           </div>
         </div>
 
@@ -236,18 +235,58 @@ export default function Chat() {
 
         {images && (
           <div style={styles.gallery}>
-            {Object.entries(images).map(([fmt, img]) => (
-              <div key={fmt} style={styles.card}>
-                <h3 style={styles.cardTitle}>{fmt}</h3>
-                <img
-                  src={`data:image/png;base64,${img}`}
-                  style={styles.image}
-                />
+            {/* Validation Feedback */}
+            {images.validation && !images.validation.valid && (
+              <div style={{ ...styles.fullWidth, padding: '16px', backgroundColor: '#fff0f0', border: '1px solid #ffcccc', borderRadius: '8px', marginBottom: '20px' }}>
+                <h4 style={{ color: '#cc0000', margin: '0 0 8px 0' }}>Compliance Issues Detected:</h4>
+                <ul style={{ margin: 0, paddingLeft: '20px', color: '#cc0000' }}>
+                  {images.validation.errors.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
               </div>
-            ))}
+            )}
+
+            {Object.entries(images)
+              .filter(([k]) => k !== 'validation')
+              .map(([fmt, data]) => {
+                const imgSrc = typeof data === 'string' ? data : (data ? (data.png || data.jpg) : null);
+                if (!imgSrc) return null;
+
+                return (
+                  <div key={fmt} style={styles.card}>
+                    <h3 style={styles.cardTitle}>{fmt}</h3>
+                    <img
+                      src={`data:image/png;base64,${imgSrc}`}
+                      style={styles.image}
+                      alt={fmt}
+                    />
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '10px' }}>
+                      {typeof data === 'object' && data.png && (
+                        <a
+                          href={`data:image/png;base64,${data.png}`}
+                          download={`creative_${fmt}.png`}
+                          style={{ color: '#0070f3', fontSize: '13px', textDecoration: 'none', border: '1px solid #eee', padding: '4px 8px', borderRadius: '4px' }}
+                        >
+                          PNG
+                        </a>
+                      )}
+                      {typeof data === 'object' && data.jpg && (
+                        <a
+                          href={`data:image/jpeg;base64,${data.jpg}`}
+                          download={`creative_${fmt}.jpg`}
+                          style={{ color: '#0070f3', fontSize: '13px', textDecoration: 'none', border: '1px solid #eee', padding: '4px 8px', borderRadius: '4px' }}
+                        >
+                          JPG
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         )}
-      </div>
+      </div >
     </>
   );
 }

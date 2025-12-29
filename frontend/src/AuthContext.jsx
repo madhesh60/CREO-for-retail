@@ -6,6 +6,9 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
+    // Persistence state
+    const [currentImages, setCurrentImages] = useState(null);
+    const [currentForm, setCurrentForm] = useState(null);
 
     useEffect(() => {
         if (token) {
@@ -70,6 +73,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
+        setCurrentImages(null);
     };
 
     const addColor = async (color) => {
@@ -88,7 +92,11 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, register, logout, loading, addColor }}>
+        <AuthContext.Provider value={{
+            user, token, login, register, logout, loading, addColor,
+            currentImages, setCurrentImages,
+            currentForm, setCurrentForm
+        }}>
             {children}
         </AuthContext.Provider>
     );

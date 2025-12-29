@@ -47,11 +47,11 @@ function AppContent() {
           >
             🦙
           </span>
-          <span onClick={() => setCurrentRoute('/models')} style={styles.navLink}>Models</span>
+          {/* Cleared "Models" link as requested for cleaner UI */}
           <span onClick={() => setCurrentRoute('/github')} style={styles.navLink}>GitHub</span>
           <span onClick={() => setCurrentRoute('/discord')} style={styles.navLink}>Discord</span>
           <span onClick={() => setCurrentRoute('/docs')} style={styles.navLink}>Docs</span>
-          <span onClick={() => setCurrentRoute('/cloud')} style={styles.navLink}>Cloud</span>
+          <span onClick={() => setCurrentRoute('/cloud')} style={styles.navLink}>Cloud Gallery</span>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '16px' }}>
           {user ? (

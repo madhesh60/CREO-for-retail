@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageColor
 import random
 import math
 from background_removal import remove_bg
+from compliance_rules import SAFE_ZONES
 
 # --- ASSETS SETUP ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -18,22 +19,9 @@ def load_font(font_name, size):
 def add_shadow(img, offset=(0, 10), blur_radius=15, shadow_color=(0, 0, 0, 80)):
     """Simple aesthetic shadow for floating objects."""
     w, h = img.size
-    # Make a blank image bigger than the original to hold the shadow
     padding = blur_radius * 2
-    shadow_img = Image.new('RGBA', (w + padding, h + padding), (0,0,0,0))
     
-    # Create the shadow shape (alpha mask)
-    shadow_mask = img.split()[-1] if img.mode == 'RGBA' else img.convert("L")
-    shadow_mask = ImageOps.invert(shadow_mask) # Need content to be black? No, mask: 255=opaque
-    
-    # Actually, simpler way: draw the alpha channel in shadow color
-    shadow = Image.new('RGBA', (w + padding, h + padding), (0,0,0,0))
-    # Paste the source image's alpha channel as the shadow color
-    # (Simplified: Just drawing a dark oval for product shadow or drop shadow)
-    
-    # Let's do a simple drop shadow approach
     shadow_layer = Image.new('RGBA', (w + padding, h + padding), (0,0,0,0))
-    shadow_content = img.copy()
     
     # Create a solid color version of the image
     solid_shadow = Image.new('RGBA', img.size, shadow_color)
@@ -42,7 +30,6 @@ def add_shadow(img, offset=(0, 10), blur_radius=15, shadow_color=(0, 0, 0, 80)):
     shadow_layer.paste(solid_shadow, (padding//2 + offset[0], padding//2 + offset[1]))
     shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(blur_radius))
     
-    # Crop back to reasonable relative size or return the large layer and offset
     return shadow_layer, padding//2
 
 def draw_premium_badge(draw, center, text, radius, shape="circle", hex_color=None):
@@ -53,12 +40,9 @@ def draw_premium_badge(draw, center, text, radius, shape="circle", hex_color=Non
     if hex_color:
         try:
             primary_color = ImageColor.getrgb(hex_color)
-            # Create a lighter/darker version for gradient effect (simplified)
-            # Just use the color provided
             fill_color = primary_color
-            border_color = (255, 255, 255) # White border for contrast
+            border_color = (255, 255, 255) 
         except ValueError:
-             # Fallback to Gold
             fill_color = (218, 165, 32)
             border_color = (255, 215, 0)
     else:
@@ -68,7 +52,6 @@ def draw_premium_badge(draw, center, text, radius, shape="circle", hex_color=Non
 
     # Draw Shape
     if shape == "square":
-        # Rounded square
         r = radius
         draw.rounded_rectangle(
             [x - r, y - r, x + r, y + r],
@@ -78,7 +61,6 @@ def draw_premium_badge(draw, center, text, radius, shape="circle", hex_color=Non
             width=3
         )
     elif shape == "hexagon":
-        # Hexagon points
         points = []
         for i in range(6):
             angle_deg = 60 * i - 30 
@@ -88,7 +70,6 @@ def draw_premium_badge(draw, center, text, radius, shape="circle", hex_color=Non
             points.append((px, py))
         draw.polygon(points, fill=fill_color, outline=border_color)
     else:
-        # Circle (Default)
         draw.ellipse(
             [x - radius, y - radius, x + radius, y + radius],
             fill=fill_color,
@@ -100,11 +81,7 @@ def draw_premium_badge(draw, center, text, radius, shape="circle", hex_color=Non
     font_size = int(radius * 0.4)
     font = load_font("Montserrat-SemiBold.ttf", font_size)
     
-    # Word wrap manually for badge (max 2 lines usually)
     words = text.split()
-    
-    # Contrast text color based on brightness? Simplify to white or dark.
-    # If gold (default), dark text looks good. If custom color, white text is usually safer for vibrant colors.
     text_color = (50, 40, 0) if not hex_color else (255, 255, 255)
 
     if len(words) > 1:
@@ -122,35 +99,44 @@ def compose_creative(bg, product, logo, spec, fmt):
     canvas = bg.copy()
     draw = ImageDraw.Draw(canvas)
 
+    # --- SAFE ZONES ---
+    # Determine safe area based on format
+    # 9x16 usually corresponds to instagram_story
+    safe_top = 0
+    safe_bottom = 0
+    
+    if fmt == "instagram_story": # 1080x1920
+        safe_zone = SAFE_ZONES.get("9x16", {})
+        safe_top = safe_zone.get("top", 200)
+        safe_bottom = safe_zone.get("bottom", 250)
+    
+    valid_h = H - safe_top - safe_bottom
+    content_start_y = safe_top
+    
     # --- PROCESS IMAGES ---
     product = remove_bg(product)
     logo = remove_bg(logo)
 
-    # --- LAYOUT CONFIG ---
-    # Reference style:
-    # Top: Logo (Small, Centered or Left)
-    # Middle: Product
-    # Middle-Left: Floating Medal/Badge
-    # Bottom: Headlines
-    
     # --- 1. LOGO ---
-    # Clean, Top Center
     lw_target = int(W * 0.15)
     scale_l = lw_target / max(1, logo.width)
     lh = int(logo.height * scale_l)
     logo_resized = logo.resize((lw_target, lh), Image.Resampling.LANCZOS)
     
-    logo_y = int(H * 0.05) if fmt != "instagram_story" else int(H * 0.08)
-    # Center logo
+    # Position: Top Center but respected SAFE ZONE
+    # For stories, below top safe zone. For others, just padding.
+    logo_y = content_start_y + int(H * 0.02)
     logo_x = (W - lw_target) // 2
     canvas.paste(logo_resized, (logo_x, logo_y), logo_resized)
     
+    # Update next available Y
+    current_y = logo_y + lh + int(H * 0.03)
+
     # --- 2. PRODUCT ---
-    # Center, large
     if fmt == "facebook_feed": # 1:1
-        pw_target = int(W * 0.4)
+        pw_target = int(W * 0.45)
     elif fmt == "instagram_story": # 9:16
-        pw_target = int(W * 0.6)
+        pw_target = int(W * 0.65)
     else: # Landscape
         pw_target = int(W * 0.25)
         
@@ -162,10 +148,16 @@ def compose_creative(bg, product, logo, spec, fmt):
     prod_shadow, shadow_offset = add_shadow(product_resized, blur_radius=20, offset=(0, 20))
     
     # Position
-    # Centered horizontally
     px = (W - pw_target) // 2
-    # Vertical: slightly above center to leave room for text
-    py = int(H * 0.45) - (ph // 2)
+    
+    # Vertical: Adaptive.
+    # Try to center in the remaining valid space between logo and bottom text area
+    # Or just fixed logic relative to safe zone.
+    # Let's place it at roughly 35-40% of visual center of valid area
+    
+    # approximate center of safe area
+    safe_center_y = content_start_y + (valid_h // 2)
+    py = safe_center_y - (ph // 2) - int(H * 0.05) # Shift up slightly
     
     # Paste Shadow then Product
     sx = px - shadow_offset
@@ -174,60 +166,41 @@ def compose_creative(bg, product, logo, spec, fmt):
     canvas.paste(product_resized, (px, py), product_resized)
     
     # --- 3. BADGE (Floating Sticker) ---
-    # Left of product?
     badge_radius = int(W * 0.09)
-    # Position: To the left of product top-half
-    if fmt == "instagram_story":
-        bx = px - int(badge_radius * 1.5)
-        by = py + int(ph * 0.1)
-    else:
-        # Standard layout
-        bx = px - int(badge_radius * 1.2)
-        by = py + int(ph * 0.2)
-        
-    # Ensure badge doesn't go off screen
-    bx = max(bx, badge_radius + 20)
+    bx = px - int(badge_radius * 1.1)
+    by = py + int(ph * 0.85) # Lower corner
+    
+    # Constraints
+    bx = max(bx, badge_radius + 10)
     
     if spec["cta_text"]:
-        # Pick dynamic badge if not specified
-        b_shape = spec.get("badge_shape")
-        if not b_shape:
-            b_shape = random.choice(["circle", "square", "hexagon"])
-            
-        b_color = spec.get("badge_color") 
-        # If no color specified, maybe random vibrant color? 
-        # Or keep default gold if not playing with colors.
-        # User asked: "batches and the format should be dynamic", implies variety.
-        # if not b_color:
-        #    b_color = random.choice(["#ff0055", "#0055ff", "#22cc55", "#ffaa00"]) 
-        # Leaving default as gold for safety unless specified, but shape varies.
-
+        b_shape = spec.get("badge_shape") or random.choice(["circle", "square", "hexagon"])
+        b_color = spec.get("badge_color")
         draw_premium_badge(draw, (bx, by), spec["cta_text"], badge_radius, shape=b_shape, hex_color=b_color)
     
     # --- 4. TEXT ---
     main_msg = spec["main_message"]
     sub_msg = spec["sub_message"]
     
-    # Font Sizes
     if fmt == "instagram_story":
         fs_main = int(H * 0.04)
         fs_sub  = int(H * 0.025)
-        ty_start = py + ph + 80
+        # Position at bottom logic, but ABOVE safe bottom
+        # Bottom safe zone is H - safe_bottom
+        # We assume bottom area is for UI, so we put text just above it
+        text_baseline = H - safe_bottom - fs_sub - fs_main - 60
     else:
         fs_main = int(H * 0.06)
         fs_sub  = int(H * 0.035)
-        ty_start = py + ph + 60
+        text_baseline = py + ph + 40
 
     font_main = load_font("PlayfairDisplay-Bold.ttf", fs_main)
     font_sub = load_font("Montserrat-SemiBold.ttf", fs_sub)
     
     # Draw Main
-    # We want to properly center text with potentially multiple lines if too long?
-    # For now assume relatively short headlines.
-    
-    draw.text((W//2, ty_start), main_msg.upper(), anchor="mt", fill=(30,30,40), font=font_main)
+    draw.text((W//2, text_baseline), main_msg.upper(), anchor="ms", fill=(30,30,40), font=font_main)
     
     # Draw Sub
-    draw.text((W//2, ty_start + fs_main + 15), sub_msg, anchor="mt", fill=(60,60,70), font=font_sub)
+    draw.text((W//2, text_baseline + fs_main + 10), sub_msg, anchor="ms", fill=(60,60,70), font=font_sub)
     
     return canvas

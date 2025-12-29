@@ -165,23 +165,37 @@ async def generate_images(
             # Generate
             color_outputs = generate_all(color_spec, product, logo)
             
+            # Identify this batch
+            batch_id = str(uuid.uuid4())
+            
             # Save to disk and DB
-            for fmt, b64_data in color_outputs.items():
-                # Decode
-                img_data = base64.b64decode(b64_data)
-                filename = f"{user.id}_{uuid.uuid4()}.png"
-                path = os.path.join("assets", "generated", filename)
+            for fmt, file_map in color_outputs.items():
+                if fmt == "validation":
+                    continue
                 
-                with open(path, "wb") as f:
-                    f.write(img_data)
+                # file_map is {'png': ..., 'jpg': ...}
+                stored_urls = {}
+                
+                for ext, b64_data in file_map.items():
+                    img_data = base64.b64decode(b64_data)
+                    filename = f"{user.id}_{uuid.uuid4()}.{ext}"
+                    path = os.path.join("assets", "generated", filename)
+                    
+                    with open(path, "wb") as f:
+                        f.write(img_data)
+                    
+                    stored_urls[ext] = f"http://127.0.0.1:8000/static/{filename}"
                 
                 # Save metadata to DB
+                # Group: user_id + batch_id
                 await db.images.insert_one({
                     "user_id": str(user.id),
-                    "url": f"http://127.0.0.1:8000/static/{filename}",
+                    "batch_id": batch_id,
+                    "urls": stored_urls, # {png: url, jpg: url}
                     "format": fmt,
                     "color": color,
-                    "spec": color_spec
+                    "spec": color_spec,
+                    "created_at": str(uuid.uuid1()) # Simple timestamp proxy or use ISO
                 })
 
     return primary_outputs
