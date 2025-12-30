@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app  # Hot reload for dev (optional, but good for "Peak" experience)
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017/retail_db
+    depends_on:
+      - mongo
+    networks:
+      - retail-network
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - retail-network
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - retail-network
+
+networks:
+  retail-network:
+    driver: bridge
+
+volumes:
+  mongo-data:

@@ -49,7 +49,7 @@ function AppContent() {
           </span>
           {/* Cleared "Models" link as requested for cleaner UI */}
           <span onClick={() => setCurrentRoute('/github')} style={styles.navLink}>GitHub</span>
-          <span onClick={() => setCurrentRoute('/discord')} style={styles.navLink}>Discord</span>
+          <span onClick={() => setCurrentRoute('/discord')} style={styles.navLink}>AI Gen</span>
           <span onClick={() => setCurrentRoute('/docs')} style={styles.navLink}>Docs</span>
           <span onClick={() => setCurrentRoute('/cloud')} style={styles.navLink}>Cloud Gallery</span>
         </div>

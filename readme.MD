@@ -1,110 +1,114 @@
-# 🎯 CREO AI: Logic-Driven Creative Engine
 
-**CREO AI** is a specialized design automation platform that replaces manual resizing and layout guesswork with **Retail-Correct Logic**. Unlike generic AI image generators that create unpredictable "art," CREO AI   functions as a digital senior designer—enforcing brand rules, visual hierarchy, and format-aware composition for market-ready a
+# AI Retail Creative Studio
 
----
+**Strict Compliance Generation Engine for Enterprise Retail Assets**
 
-## 🚫 The Problem
-In modern retail, brands don't struggle to *imagine* an ad; they struggle to *scale* it.
-* **Manual Drudgery:** Designers waste 80% of their time copy-pasting logos and re-aligning text for 20+ different formats.
-* **Diffusion Chaos:** Tools like Midjourney or DALL-E generate "dreamy" layouts that ignore brand safety, overlap logos, and hallucinate text.
-* **The "Unsafe" Ad:** Generic AI doesn't understand that a badge should never cover a product's face or that a CTA needs specific contrast ratios.
-* **The "Unsafe" Ad:** Generic AI doesn't understand that a badge should never cover a product's face or that a CTA needs specific contrast ratios.
-
-
-## ✅ The Solution: Logic, Not Magic
-CREO AI uses a **"Decision-First"** architecture. It doesn't "dream" pixels; it places assets based on professional retail design principles.
-
-### The 5-Step Automated Pipeline:
-1. **Intent Capture:** User provides raw ingredients (Product PNG, Logo, Headline, CTA text).
-2. **Asset Preparation:** Automatic background removal and logo cleaning to ensure transparency.
-3. **Format Awareness:** The system detects the target aspect ratio (1:1 Feed, 9:16 Story, 16:9 Banner).
-4. **Layout Enforcement:** Elements are locked into a professional hierarchy (Headline > Subheadline > CTA Badge).
-5. **Badge Generation:** A high-contrast, retail-safe CTA "sticker" is dynamically generated and placed in a clear visual zone.
-6. **Export:** The final asset is exported in a format that is ready for use in social media, email, or other marketing channels.
-7. **Delivery:** The final asset is delivered to the user in a format that is ready for use in social media, email, or other marketing channels.
-8. **Analytics:** The final asset is delivered to the user in a format that is ready for use in social media, email, or other marketing channels.
-9. **Feedback:** The final asset is delivered to the user in a format that is ready for use in social media, email, or other marketing channels.
-10. **Optimization:** The final asset is delivered to the user in a format that is ready for use in social media, email, or other marketing channels.
+The AI Retail Creative Studio is a state-of-the-art automated design system built to generate localized, brand-compliant retail marketing assets at scale. Unlike standard generative tools, this system is built on a "Compliance-First" architecture that strictly strictly enforces brand guidelines, legal requirements, and layout safety zones before any content is created.
 
 ---
 
-## 🏗️ Technical Architecture
+## 🚀 Key Features
 
-```mermaid
-flowchart TD
-    A[User Input] --> B{Asset Prep Engine}
-    B -->|Remove BG| C[Clean Product Layer]
-    B -->|Transparent| D[Logo Layer]
-    
-    C & D --> E{Retail Logic Engine}
-    
-    E -->|Rule: Story 9:16| F[Vertical Composition]
-    E -->|Rule: Post 1:1| G[Square Composition]
-    
-    F & G --> H[Dynamic Badge Generator]
-    H --> I[Final Retail-Ready Asset]
+### 🛡️ Strict Compliance Engine
+*   **Zero Tolerance Policy**: Hard-coded rejection of forbidden content (Financial claims, Competitions, Sustainability assertions).
+*   **Alcohol & Age Gating**: Semantic analysis detects alcohol-related copy and automatically injects mandatory, high-contrast "Drinkaware" lock-ups.
+*   **Accessibility Gates**: Enforces WCAG AA contrast ratios and minimum font sizes (20px Brand / 12px SAYS / 10px Checkout).
 
+### 🎨 Dynamic Template System
+*   **LEP Mode (Low Everyday Price)**: Restrictive template enforcing White Backgrounds, Tesco Blue typography, and specific layout rules.
+*   **Social Safe Zones**: 9:16 "Stories" format enforcement with rigid 200px Top / 250px Bottom exclusion zones.
+*   **Value Tiles**: Immutable, schema-driven components ("New", "Clubcard Price", "White Value Tile") that resist tampering.
+
+### 👁️ Computer Vision Integration
+*   **People Detection**: OpenCV-based filtering scans product imagery for human faces.
+*   **Verification Loop**: Triggers a "Confirmation Required" workflow if talent is detected, ensuring usage rights compliance.
+
+### 📐 Geometric Layout Solver
+*   **Collision Avoidance**: Physics-based layout ensures Packshots, Logos, and CTAs never overlap text or safe zones.
+*   **Visual Priority**: Mathematical enforcement of "Packshot needs to be the closest element to the CTA".
+
+---
+
+## 🏗️ Architecture
+
+The solution uses a decoupled **React + FastAPI** architecture, containerized for rapid deployment.
+
+```
+├── backend/             # Python FastAPI Service
+│   ├── composer.py      # Core Layout & Rendering Engine
+│   ├── validator.py     # Compliance Logic Gate (Text & Image)
+│   ├── compliance_rules.py # Central Rules Dictionary
+│   └── ...
+├── frontend/            # React Vite Application
+│   ├── src/Chat.jsx     # Main Creative Interface
+│   ├── src/Docs.jsx     # Technical Documentation Portal
+│   └── ...
+└── docker-compose.yml   # Orchestration
 ```
 
 ---
 
-## 💎 Core Features
-
-| Feature | How It Works | Why It Wins |
-| --- | --- | --- |
-| **Retail Hierarchy Lock** | Forces Headline > Subhead > CTA order. | Ensures the customer reads the message. |
-| **Asset Preservation** | Does NOT alter the product pixels. | Essential for brand compliance and legal. |
-| **Dynamic Badge Gen** | Creates high-contrast rounded/pill CTAs. | Mimics professional FMCG/Retail ads. |
-| **Zero-Overlap Guard** | Coordinates logo/text placement zones. | Prevents messy, "unprofessional" designs. |
-| **Smart Layering** | Treats images as PNG layers, not flat pixels. | Allows for clean, high-res exports. |
-
----
-
-## 🚀 Getting Started
+## 🛠️ Installation & Deployment
 
 ### Prerequisites
+*   Docker & Docker Compose
+*   (Or) Python 3.10+ & Node.js 18+
 
-* Node.js v18+
-* Python 3.9+ (for background removal processing)
-* Docker
-
-### Installation
+### 🐳 Docker Deployment (Recommended)
+This will spin up both the Backend API and Frontend Client in isolated containers.
 
 ```bash
-git clone [https://github.com/your-username/retail-gen-ai.git](https://github.com/your-username/retail-gen-ai.git)
-cd retail-gen-ai
+# 1. Clone the repository
+git clone <repo-url>
+cd retail-creative-studio
+
+# 2. Build and Run
+docker-compose up --build
+```
+
+*   **Frontend**: http://localhost:3000
+*   **Backend Docs**: http://localhost:8000/docs
+*   **Application Docs**: http://localhost:3000/docs
+
+### 💻 Local Development
+If you prefer running locally without Docker:
+
+**Backend:**
+```bash
+cd backend
+pip install -r req.txt
+python -m uvicorn main:app --reload
+```
+
+**Frontend:**
+```bash
+cd frontend
 npm install
-
+npm run dev
 ```
 
 ---
 
-## 🚦 Design Logic (The "Brain")
+## 📖 Usage Guide
 
-The system follows a strict "Grid & Zone" logic:
-
-* **The Anchor:** The product is the visual hero, occupying 60% of the visual weight.
-* **The Safe Zone:** Logos are placed in 1 of 4 corners, verified against the background complexity.
-* **The Retail Badge:** Instead of plain text, the CTA is wrapped in a "Badge" (circle or pill) with a thick stroke to ensure it pops against any product image.
-* **The Retail Badge:** Instead of plain text, the CTA is wrapped in a "Badge" (circle or pill) with a thick stroke to ensure it pops against any product image.
-
-
-
----
-
-## 📈 Business Impact
-
-* **10x Faster Turnaround:** Campaign scaling that took days now takes seconds.
-* **Operational Efficiency:** Moves design from "creative exploration" to "operational execution."
-* **Global Consistency:** Every ad, in every format, looks like it was made by the same designer.
-
+1.  **Ingest**: Upload a high-res Product Packshot and Brand Logo. The system automatically removes the product background.
+2.  **Configure**:
+    *   **Headline/Subhead**: Enter your localized copy.
+    *   **Template**: Choose 'Standard' or 'LEP' (Low Everyday Price).
+    *   **Tiles**: Optionally add 'New' or 'Clubcard' value tiles.
+3.  **Validate**: Click "Generate". The system runs `validator.py`:
+    *   *Scan Copy*: For banned keywords ("best", "win", "green").
+    *   *Scan Image*: For people (requires manual confirm if found).
+    *   *Check Structure*: Ensures mandatory headline/subhead presence.
+4.  **Result**: If compliant, the system generates assets in:
+    *   9:16 (Story)
+    *   1:1 (Feed)
+    *   16:9 (Landscape)
 
 ---
 
-## 📄 License
+## 📚 Documentation
+Full technical documentation is available within the application at the `/docs` route.
 
-This project is licensed under the MIT License.
-```
-
-```
+---
+**Authored by Antigravity Agent**

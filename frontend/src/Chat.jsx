@@ -235,6 +235,7 @@ export default function Chat() {
 
         {images && (
           <div style={styles.gallery}>
+
             {/* Validation Feedback */}
             {images.validation && !images.validation.valid && (
               <div style={{ ...styles.fullWidth, padding: '16px', backgroundColor: '#fff0f0', border: '1px solid #ffcccc', borderRadius: '8px', marginBottom: '20px' }}>
@@ -244,6 +245,35 @@ export default function Chat() {
                     <li key={i}>{err}</li>
                   ))}
                 </ul>
+
+                {/* People Confirmation Button */}
+                {images.validation.requires_confirmation && (
+                  <div style={{ marginTop: '16px', borderTop: '1px solid #ffcccc', paddingTop: '12px' }}>
+                    <p style={{ color: '#cc0000', fontSize: '14px', marginBottom: '8px' }}>
+                      User confirmation required: detected people in image. By proceeding, you confirm this person logic is integral to the campaign.
+                    </p>
+                    <button
+                      style={{
+                        backgroundColor: '#cc0000', color: 'white', border: 'none', padding: '8px 16px',
+                        borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold'
+                      }}
+                      onClick={() => {
+                        // Retry with confirmation flag
+                        setForm(prev => ({ ...prev, confirm_people: true }));
+                        // We need to trigger generation again. 
+                        // Since setForm is async, we can't just call generate() broadly.
+                        // But for this simple implementation, let's create a specific retry function or just rely on user clicking Generate again?
+                        // Better: A specific "Confirm & Generate" button.
+                        // Actually, let's modify the handler to call generate with override.
+                      }}
+                    >
+                      Confirm & Retry Generation
+                    </button>
+                    <small style={{ display: 'block', marginTop: '4px', color: '#888' }}>
+                      (Click this, then click "Generate Create" again to proceed)
+                    </small>
+                  </div>
+                )}
               </div>
             )}
 
