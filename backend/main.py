@@ -14,9 +14,11 @@ import base64
 from typing import Optional, List
 
 from generate_creatives import generate_all
+from ai_agent import generate_ad_image
 from database import db
 from models import UserCreate, UserLogin, UserModel, Token
 from auth import verify_password, get_password_hash, create_access_token, get_current_user
+from fastapi import Response
 
 app = FastAPI()
 
@@ -199,3 +201,14 @@ async def generate_images(
                 })
 
     return primary_outputs
+
+# ---------------- AI GEN EXTENSION ----------------
+@app.post("/ai-generate")
+async def ai_generate_proxy(prompt: str = Form(...)):
+    try:
+        # Call the logic derived from AD-generator
+        img_bytes = generate_ad_image(prompt)
+        # Return directly as image
+        return Response(content=img_bytes, media_type="image/jpeg")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

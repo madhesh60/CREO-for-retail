@@ -21,11 +21,29 @@ export default function Chat() {
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState(null);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const [isAlcohol, setIsAlcohol] = useState(false);
+  const ALCOHOL_KEYWORDS = [
+    "alcohol", "wine", "beer", "vodka", "gin", "spirit", "whisky", "whiskey",
+    "champagne", "prosecco", "ale", "cider", "lager", "drink", "bottle"
+  ];
+
+  const checkAlcohol = (text) => {
+    return ALCOHOL_KEYWORDS.some(k => text.toLowerCase().includes(k));
   };
 
-  const generate = async () => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+
+    // Check alcohol for warning
+    if (name === "main_message" || name === "sub_message") {
+      const fullText = (name === "main_message" ? value : form.main_message) + " " +
+        (name === "sub_message" ? value : form.sub_message);
+      setIsAlcohol(checkAlcohol(fullText));
+    }
+  };
+
+  const generate = async (overrides = {}) => {
     if (!product || !logo) {
       alert("Upload product and logo");
       return;
@@ -34,14 +52,31 @@ export default function Chat() {
     setLoading(true);
     setImages(null);
 
+    // Merge form with overrides for this specific request
+    const currentData = { ...form, ...overrides };
+
+    // Also update state so it persists for future clicks
+    if (Object.keys(overrides).length > 0) {
+      setForm(prev => ({ ...prev, ...overrides }));
+    }
+
     try {
       // -------- STEP 1: EXTRACT --------
       const extractData = new FormData();
-      Object.entries(form).forEach(([k, v]) =>
+      Object.entries(currentData).forEach(([k, v]) =>
         extractData.append(k, v)
       );
 
       const spec = await extractSpec(extractData);
+
+      // Ensure overrides are carried over to spec if extracted spec doesn't have them
+      // (The extraction might ignore unknown fields, so we might need to manually ensure they are passed to generateImages if generateImages uses spec)
+      // Actually generateImages takes the spec object. We should manually inject overrides into spec if needed.
+      if (overrides.confirm_people) spec.confirm_people = true;
+      if (overrides.confirm_drinkaware) spec.confirm_drinkaware = true;
+      // Also ensure they are in the persistent form/spec if needed
+      if (currentData.confirm_people) spec.confirm_people = true;
+      if (currentData.confirm_drinkaware) spec.confirm_drinkaware = true;
 
       // -------- STEP 2: GENERATE --------
       const outputs = await generateImages(spec, product, logo, token);
@@ -100,7 +135,7 @@ export default function Chat() {
             </svg>
           </div>
           <div style={styles.heroText}>
-            <h1 style={styles.heroTitle}>AI Retail Creative<br />Studio</h1>
+            <h1 style={styles.heroTitle}>CREO Retail Creative<br />Studio</h1>
           </div>
         </div>
 
@@ -140,6 +175,8 @@ export default function Chat() {
                 style={styles.input}
               />
             </div>
+
+            {/* Frontend Keyword Hint - Removed for clean UI */}
 
             <div>
               <label style={styles.label}>Style</label>
@@ -226,7 +263,7 @@ export default function Chat() {
             </div>
 
             <div style={styles.fullWidth}>
-              <button style={styles.button} onClick={generate}>
+              <button style={styles.button} onClick={() => generate()}>
                 {loading ? <div className="spinner" style={{ width: '20px', height: '20px', borderTopColor: '#fff' }}></div> : "Generate Create"}
               </button>
             </div>
@@ -257,21 +294,28 @@ export default function Chat() {
                         backgroundColor: '#cc0000', color: 'white', border: 'none', padding: '8px 16px',
                         borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold'
                       }}
-                      onClick={() => {
-                        // Retry with confirmation flag
-                        setForm(prev => ({ ...prev, confirm_people: true }));
-                        // We need to trigger generation again. 
-                        // Since setForm is async, we can't just call generate() broadly.
-                        // But for this simple implementation, let's create a specific retry function or just rely on user clicking Generate again?
-                        // Better: A specific "Confirm & Generate" button.
-                        // Actually, let's modify the handler to call generate with override.
-                      }}
+                      onClick={() => generate({ confirm_people: true })}
                     >
-                      Confirm & Retry Generation
+                      Confirm Human & Retry
                     </button>
-                    <small style={{ display: 'block', marginTop: '4px', color: '#888' }}>
-                      (Click this, then click "Generate Create" again to proceed)
-                    </small>
+                  </div>
+                )}
+
+                {/* Alcohol Compliance Button */}
+                {images.validation.requires_compliance && (
+                  <div style={{ marginTop: '16px', borderTop: '1px solid #ffcccc', paddingTop: '12px' }}>
+                    <p style={{ color: '#cc0000', fontSize: '14px', marginBottom: '8px' }}>
+                      <strong>Strict Compliance:</strong> Alcohol product detected. You must confirm to apply the mandatory Drinkaware warning.
+                    </p>
+                    <button
+                      style={{
+                        backgroundColor: '#333', color: 'white', border: 'none', padding: '8px 16px',
+                        borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold'
+                      }}
+                      onClick={() => generate({ confirm_drinkaware: true })}
+                    >
+                      Apply Drinkaware & Retry
+                    </button>
                   </div>
                 )}
               </div>

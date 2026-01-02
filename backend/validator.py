@@ -96,7 +96,7 @@ def validate_text_content(main_message, sub_message, cta_text):
 
 def validate_image_content(image_obj):
     """
-    Detects people in the image using OpenCV Haar Cascades.
+    Detects people and alcohol bottles in the image using OpenCV.
     Returns a dict with status and flags.
     """
     try:
@@ -104,10 +104,13 @@ def validate_image_content(image_obj):
         img = None
         if hasattr(image_obj, 'read'):
              # It's a file-like object, read it. 
-             image_bytes = image_obj.read()
-             image_obj.seek(0)
-             nparr = np.frombuffer(image_bytes, np.uint8)
-             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+             try:
+                 image_bytes = image_obj.read()
+                 image_obj.seek(0)
+                 nparr = np.frombuffer(image_bytes, np.uint8)
+                 img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+             except Exception:
+                 pass
         elif hasattr(image_obj, 'resize'): 
              # It's a PIL Image
              # Convert to numpy
@@ -119,25 +122,83 @@ def validate_image_content(image_obj):
                  img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
         if img is not None:
+             # 1. Human Detection
              gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
              # Load face cascade
              face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-             faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+             
+             # Higher threshold to reduce false positives (Set to 10 for strictness as requested)
+             faces = face_cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=10, minSize=(40, 40))
              
              if len(faces) > 0:
                  return {
-                     "valid": False, # Valid but requires warning? 
-                     # User said: "Should pause generation and ask user, not auto-fail."
-                     # So valid = False + requires_confirmation = True triggers the pause.
+                     "valid": False, 
                      "requires_confirmation": True, 
-                     "message": f"[{ERROR_CODES['PEOPLE_DETECTED']}] People detected in image. User confirmation required verifying people are integral to the campaign."
+                     "type": "people",
+                     "message": f"[{ERROR_CODES['PEOPLE_DETECTED']}] Human detected in image. Compliance confirmation required."
                  }
             
+             # 2. Alcohol/Bottle Detection
+             if detect_bottles(img):
+                 return {
+                     "valid": False,
+                     "requires_compliance": True,
+                     "type": "alcohol",
+                     "message": f"[{ERROR_CODES['ALCOHOL_LOCKUP']}] Alcohol product visual detected. Mandatory Drinkaware compliance required."
+                 }
+
     except Exception as e:
         print(f"Image validation error: {e}")
         pass
 
-    return {"valid": True, "requires_confirmation": False}
+    return {"valid": True, "requires_confirmation": False, "requires_compliance": False}
+
+def detect_bottles(img):
+    """
+    Heuristic bottle detection using contour analysis.
+    Refined for better recall (catching more bottles) while maintaining precision.
+    """
+    try:
+        height, width, _ = img.shape
+        img_area = height * width
+        
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # 1. Edge Detection (Canny) 
+        edges = cv2.Canny(gray, 50, 150)
+        
+        # Dilation to close gaps
+        kernel = np.ones((5,5),np.uint8)
+        dilated = cv2.dilate(edges, kernel, iterations=2)
+        
+        contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            
+            # Filter noise (0.5% area) and full-screen backgrounds (>90% area)
+            if area < (img_area * 0.005) or area > (img_area * 0.9): 
+                continue
+                
+            x, y, w, h = cv2.boundingRect(cnt)
+            aspect_ratio = float(h) / w
+            
+            # Bottles are vertically oriented.
+            # Range 1.5 (stout) to 6.5 (tall)
+            if 1.5 < aspect_ratio < 6.5:
+                # Rectangularity check: extent
+                rect_area = w * h
+                extent = float(area) / rect_area
+                
+                # Bottles have necks, so they fill less of their bounding rect than a box.
+                # 0.4 - 0.85 allows for various bottle shapes.
+                if 0.4 < extent < 0.85:
+                    return True
+                
+    except Exception as e:
+        print(f"Bottle detection error: {e}")
+        
+    return False
 
 def validate_layout(fmt, width, height, elements):
     # Placeholder for geometric validation (e.g. is logo top_right?)

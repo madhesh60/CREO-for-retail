@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { AuthProvider, useAuth } from "./AuthContext";
 import Chat from "./Chat";
-import Models from "./Models";
-import GitHub from "./GitHub";
-import Discord from "./Discord";
+import AIgen from "./AIGen";
 import Docs from "./Docs";
 import Cloud from "./Cloud";
 import Login from "./Login";
@@ -18,12 +16,8 @@ function AppContent() {
     switch (currentRoute) {
       case '/':
         return <Chat />;
-      case '/models':
-        return <Chat />;
-      case '/github':
-        return <GitHub />;
-      case '/discord':
-        return <Discord />;
+      case '/AIgen':
+        return <AIgen />; 
       case '/docs':
         return <Docs />;
       case '/cloud':
@@ -48,8 +42,8 @@ function AppContent() {
             🦙
           </span>
           {/* Cleared "Models" link as requested for cleaner UI */}
-          <span onClick={() => setCurrentRoute('/github')} style={styles.navLink}>GitHub</span>
-          <span onClick={() => setCurrentRoute('/discord')} style={styles.navLink}>AI Gen</span>
+          <span onClick={() => setCurrentRoute('/')} style={styles.navLink}>CREO Model</span>
+          <span onClick={() => setCurrentRoute('/AIgen')} style={styles.navLink}>AI Gen</span>
           <span onClick={() => setCurrentRoute('/docs')} style={styles.navLink}>Docs</span>
           <span onClick={() => setCurrentRoute('/cloud')} style={styles.navLink}>Cloud Gallery</span>
         </div>

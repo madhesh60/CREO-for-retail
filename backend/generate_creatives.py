@@ -25,18 +25,28 @@ def generate_all(spec, product, logo):
         spec.get("cta_text", "")
     )
     
-    # 2. Image Validation (People Detection)
+    # 2. Image Validation (People & Alcohol Detection)
     # We validate the product image (PIL object)
     img_val = validate_image_content(product)
     
     if not img_val["valid"]:
-        # Check if user confirmed
-        if not spec.get("confirm_people", False):
-            # Append error
-            validation["valid"] = False
-            validation["errors"].append(img_val["message"])
-            validation["requires_confirmation"] = True
-    
+        # Handle People Detection
+        if img_val.get("type") == "people":
+            if not spec.get("confirm_people", False):
+                validation["valid"] = False
+                validation["errors"].append(img_val["message"])
+                validation["requires_confirmation"] = True
+        
+        # Handle Alcohol Detection
+        elif img_val.get("type") == "alcohol":
+            if not spec.get("confirm_drinkaware", False):
+                validation["valid"] = False
+                validation["errors"].append(img_val["message"])
+                validation["requires_compliance"] = True
+            else:
+                # User confirmed compliance, force alcohol mode in composer
+                spec["is_alcohol"] = True
+
     outputs["validation"] = validation
 
     # Block generation on hard failure

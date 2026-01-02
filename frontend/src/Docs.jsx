@@ -1,276 +1,205 @@
-//Docs.jsx
-
+import { useState } from "react";
 import styles from "./styles.js";
 
+const COMPLIANCE_RULES = [
+  { id: "1", title: "Mandatory Elements", desc: "Every creative must include a Headline, Subhead, Logo, and Packshot. If any one is missing, the creative is structurally invalid." },
+  { id: "2", title: "Headline & Subhead Rules", desc: "Headline and Subhead are required text slots. They must be neutral, factual, and cannot contain claims, prices, or offers." },
+  { id: "3", title: "CTA (Call To Action)", desc: "CTA is not allowed by default. It can appear only when explicitly enabled for that format or template." },
+  { id: "4", title: "Value Tiles (Core Concept)", desc: "Value tiles are pre-designed locked boxes used to show value or status. They are not normal text and cannot be freely edited or moved." },
+  { id: "5", title: "Allowed Value Tile Types", desc: "Only three tile types are allowed: New, White Value Tile, Clubcard Value Tile. Any other tile type is invalid." },
+  { id: "6", title: "Value Tile Immutability", desc: "Value tiles have fixed position, size, color, and style. No text, image, or CTA may overlap a tile." },
+  { id: "7", title: "Tile Edit Permissions", desc: "New Tile → no editable text. White Value Tile → price only. Clubcard Tile → offer price + regular price only." },
+  { id: "8", title: "Clubcard Definition", desc: "Clubcard is Tesco’s loyalty program. Clubcard pricing requires extra legal text and an end date." },
+  { id: "9", title: "Clubcard Mandatory Disclaimer", desc: "Any Clubcard tile must include exact text: 'Available in selected stores. Clubcard/app required. Ends DD/MM'." },
+  { id: "10", title: "Date Format Rule", desc: "All end dates must be in DD/MM format only. Missing or wrong format causes rejection." },
+  { id: "11", title: "Tesco Tags", desc: "Tesco tags indicate availability or exclusivity. They are mandatory when linking to Tesco or using Pinterest format." },
+  { id: "12", title: "Allowed Tesco Tag Text", desc: "Only these are allowed: 'Only at Tesco', 'Available at Tesco', 'Selected stores. While stocks last.'. Any variation is illegal." },
+  { id: "13", title: "Logo Rules", desc: "A logo must appear on all creatives. It can be uploaded or selected from the brand library." },
+  { id: "14", title: "Packshot Rules", desc: "Maximum 3 packshots allowed. One clear lead product must always be present." },
+  { id: "15", title: "Packshot Priority", desc: "Packshot must be the closest visual element to the CTA (if CTA exists). This ensures correct visual hierarchy." },
+  { id: "16", title: "Background Rules", desc: "Only one background is allowed. Either a flat color OR a single image — never multiple." },
+  { id: "17", title: "Low Everyday Price (LEP) Template", desc: "LEP is a locked template mode, not a style choice. It enforces white background, Tesco blue text, left alignment, and LEP logo usage." },
+  { id: "18", title: "LEP Restrictions", desc: "In LEP mode, no branded elements are allowed except the logo. Tag text is mandatory and layout is fully locked." },
+  { id: "19", title: "Alcohol Category Detection", desc: "Alcohol must be detected before generation begins. This activates mandatory Drinkaware rules." },
+  { id: "20", title: "Drinkaware Lock-up (Structural)", desc: "Alcohol creatives must reserve space for Drinkaware. This applies to all formats and sizes." },
+  { id: "21", title: "Drinkaware Design Rules", desc: "Drinkaware must be black or white only, readable, and visible. Minimum size and contrast are mandatory." },
+  { id: "22", title: "No Price Language", desc: "Text must not mention prices, discounts, savings, or percentages. Even implied pricing causes a hard fail." },
+  { id: "23", title: "No Claims", desc: "Claims like 'best', 'No.1', 'proven', or comparisons are forbidden. Asterisks pointing to explanations are also not allowed." },
+  { id: "24", title: "No Competitions or Giveaways", desc: "No 'win', 'enter', 'contest', or reward-based language. Tesco self-serve does not allow competitions." },
+  { id: "25", title: "No Sustainability or Green Claims", desc: "No eco, green, carbon, ethical, or environmental claims. Even vague sustainability hints are rejected." },
+  { id: "26", title: "No Charity or Partnerships", desc: "No charity mentions, donations, or partner logos. These are not allowed in retail creatives." },
+  { id: "27", title: "No Money-Back Guarantees", desc: "No refunds, guarantees, or 'risk-free' wording. Financial assurances are forbidden." },
+  { id: "28", title: "No Terms & Conditions", desc: "No 'T&Cs apply', footnotes, or asterisks. All required info must be upfront or not shown at all." },
+  { id: "29", title: "Social Safe Zones (9:16)", desc: "For Instagram/Facebook Stories: Top 200px must be empty, Bottom 250px must be empty. Prevents UI overlap." },
+  { id: "30", title: "Collision Rules", desc: "Text, tiles, tags, logos, and CTA must never overlap. Any overlap is an automatic failure." },
+  { id: "31", title: "Accessibility — Font Size", desc: "Minimum font sizes: 20px (Brand, Social, Checkout Double Density), 10px (Checkout Single Density), 12px (SAYS)." },
+  { id: "32", title: "Accessibility — Contrast", desc: "All text and CTA must meet WCAG AA contrast standards. Low contrast = illegal creative." },
+  { id: "33", title: "People-in-Image Rule", desc: "If people are detected, user confirmation is required. System must pause — not auto-approve or auto-fail." },
+  { id: "34", title: "Format-Aware Rules", desc: "Rules change by format (social, checkout, brand). Safe zones, font sizes, and layout adapt accordingly." },
+  { id: "35", title: "Fail-Fast Enforcement", desc: "Any rule violation causes immediate rejection. No auto-fixing, no silent correction, no fallback generation." },
+  { id: "36", title: "Error Taxonomy", desc: "Each failure must return a specific error code. This makes compliance auditable and explainable." }
+];
+
 const docStyles = {
-  ...styles,
   container: {
-    maxWidth: '1200px',
+    maxWidth: '1400px',
     margin: '0 auto',
-    padding: '40px 20px',
+    padding: '0',
     display: 'grid',
-    gridTemplateColumns: '250px 1fr',
-    gap: '40px',
-    fontFamily: '"Inter", sans-serif',
-    color: '#333',
+    gridTemplateColumns: '280px 1fr',
+    minHeight: '100vh',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif',
+    color: '#24292f',
+    backgroundColor: '#fff',
   },
   sidebar: {
     position: 'sticky',
-    top: '20px',
-    height: 'fit-content',
-    borderRight: '1px solid #eee',
-    paddingRight: '20px',
+    top: '0',
+    height: '100vh',
+    overflowY: 'auto',
+    borderRight: '1px solid #d0d7de',
+    padding: '24px',
+    backgroundColor: '#f6f8fa',
   },
-  sidebarLink: {
+  content: {
+    padding: '48px 64px',
+    maxWidth: '960px',
+  },
+  sidebarSection: {
+    marginBottom: '24px',
+  },
+  sidebarHeader: {
+    fontSize: '11px',
+    fontWeight: '600',
+    color: '#57606a',
+    textTransform: 'uppercase',
+    marginBottom: '8px',
+    letterSpacing: '0.5px'
+  },
+  link: {
     display: 'block',
-    padding: '8px 0',
-    color: '#666',
+    padding: '6px 0',
+    color: '#24292f',
     textDecoration: 'none',
     fontSize: '14px',
     cursor: 'pointer',
-    transition: 'color 0.2s',
+    '&:hover': {
+      color: '#0969da',
+    }
   },
-  sidebarLinkActive: {
-    color: '#0070f3',
-    fontWeight: 'bold',
-  },
-  content: {
-    lineHeight: '1.6',
-  },
-  section: {
-    marginBottom: '60px',
-    scrollMarginTop: '20px',
+  searchBox: {
+    width: '100%',
+    padding: '8px 12px',
+    fontSize: '14px',
+    border: '1px solid #d0d7de',
+    borderRadius: '6px',
+    marginBottom: '20px',
+    backgroundColor: '#fff'
   },
   h1: {
-    fontSize: '36px',
-    fontWeight: '800',
-    marginBottom: '10px',
-    color: '#111',
+    fontSize: '32px',
+    fontWeight: '600',
+    marginBottom: '16px',
+    paddingBottom: '8px',
+    borderBottom: '1px solid #d0d7de',
   },
   h2: {
     fontSize: '24px',
-    fontWeight: '700',
-    marginBottom: '20px',
-    marginTop: '40px',
-    paddingBottom: '10px',
-    borderBottom: '1px solid #eaeaea',
-    color: '#222',
-  },
-  h3: {
-    fontSize: '18px',
     fontWeight: '600',
-    marginBottom: '15px',
-    marginTop: '30px',
-    color: '#333',
-  },
-  p: {
+    marginTop: '48px',
     marginBottom: '16px',
-    fontSize: '16px',
-    color: '#444',
+    paddingBottom: '0.3em',
+    borderBottom: '1px solid #eaecef',
   },
-  codeBlock: {
+  ruleBox: {
+    marginBottom: '24px',
+    border: '1px solid #d0d7de',
+    borderRadius: '6px',
+    overflow: 'hidden',
+  },
+  ruleHeader: {
     backgroundColor: '#f6f8fa',
-    padding: '16px',
-    borderRadius: '6px',
-    fontFamily: '"Fira Code", monospace',
-    fontSize: '14px',
-    overflowX: 'auto',
-    marginBottom: '20px',
-    border: '1px solid #e1e4e8',
+    padding: '12px 16px',
+    borderBottom: '1px solid #d0d7de',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  alert: {
+  ruleId: {
+    fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
+    fontSize: '12px',
+    backgroundColor: 'rgba(175, 184, 193, 0.2)',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    color: '#24292f',
+  },
+  ruleContent: {
     padding: '16px',
-    borderRadius: '6px',
-    marginBottom: '20px',
+    lineHeight: '1.6',
     fontSize: '15px',
-  },
-  alertWarning: {
-    backgroundColor: '#fff8c5',
-    border: '1px solid #f1e05a',
-    color: '#735c0f',
-  },
-  alertError: {
-    backgroundColor: '#ffeef0',
-    border: '1px solid #ffdce0',
-    color: '#b31d28',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    marginBottom: '20px',
-  },
-  th: {
-    textAlign: 'left',
-    padding: '12px',
-    borderBottom: '2px solid #eaeaea',
-    fontWeight: '600',
-    fontSize: '14px',
-  },
-  td: {
-    padding: '12px',
-    borderBottom: '1px solid #eaeaea',
-    fontSize: '14px',
-  },
+  }
 };
 
 export default function Docs() {
-  const scrollTo = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const [search, setSearch] = useState("");
+
+  const filteredRules = COMPLIANCE_RULES.filter(r =>
+    r.title.toLowerCase().includes(search.toLowerCase()) ||
+    r.desc.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div style={docStyles.container}>
-      {/* Sidebar Navigation */}
       <nav style={docStyles.sidebar}>
-        <div style={{ marginBottom: '20px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '12px', letterSpacing: '1px', color: '#999' }}>Contents</div>
-        <a style={docStyles.sidebarLink} onClick={() => scrollTo('intro')}>Introduction</a>
-        <a style={docStyles.sidebarLink} onClick={() => scrollTo('features')}>Core Features</a>
-        <a style={docStyles.sidebarLink} onClick={() => scrollTo('compliance')}>Compliance Engine</a>
-        <a style={docStyles.sidebarLink} onClick={() => scrollTo('workflow')}>Usage Workflow</a>
-        <a style={docStyles.sidebarLink} onClick={() => scrollTo('api')}>API Reference</a>
-        <a style={docStyles.sidebarLink} onClick={() => scrollTo('deploy')}>Deployment (Docker)</a>
+        <div style={{ marginBottom: '25px', fontWeight: 'bold', fontSize: '18px' }}>
+          Compliance Docs
+        </div>
+
+        <input
+          type="text"
+          placeholder="Search rules..."
+          style={docStyles.searchBox}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        <div style={docStyles.sidebarSection}>
+          <div style={docStyles.sidebarHeader}>Core Principles</div>
+          <a style={docStyles.link}>Mandatory Elements</a>
+          <a style={docStyles.link}>Safe Zones</a>
+          <a style={docStyles.link}>Accessibility</a>
+        </div>
+
+        <div style={docStyles.sidebarSection}>
+          <div style={docStyles.sidebarHeader}>Restricted Categories</div>
+          <a style={docStyles.link}>Alcohol & Drinkaware</a>
+          <a style={docStyles.link}>Competitions</a>
+          <a style={docStyles.link}>Sustainability Claims</a>
+        </div>
       </nav>
 
-      {/* Main Content */}
       <div style={docStyles.content}>
-        
-        {/* Introduction */}
-        <div id="intro" style={docStyles.section}>
-          <h1 style={docStyles.h1}>AI Retail Creative Studio</h1>
-          <p style={{ fontSize: '20px', color: '#666', marginBottom: '30px' }}>
-            Enterprise-grade generative design system for localized retail assets.
-          </p>
-          <p style={docStyles.p}>
-            The AI Retail Creative Studio is a Strict Compliance Generation engine designed to produce retail marketing assets that inherently adhere to complex brand guidelines. It eliminates the "human error" factor by encoding rules for copy, layout, and legal requirements directly into the generation pipeline.
-          </p>
-        </div>
+        <h1 style={docStyles.h1}>Compliance & Validation Rules</h1>
+        <p style={{ fontSize: '18px', color: '#57606a', marginBottom: '40px', lineHeight: '1.5' }}>
+          The Retail Creative Studio operates on a strict "Zero Tolerance" policy.
+          Use this reference to understand the 36 core validation rules enforced by the backend engine.
+        </p>
 
-        {/* Features */}
-        <div id="features" style={docStyles.section}>
-          <h2 style={docStyles.h2}>Core Features</h2>
-          
-          <h3 style={docStyles.h3}>Strict Compliance Enforcement</h3>
-          <p style={docStyles.p}>
-            The engine operates on a "Zero Tolerance" policy. Any generation request that violates structural, legal, or brand rules is rejected pre-generation or requires explicit high-level override.
-          </p>
-          
-          <h3 style={docStyles.h3}>Dynamic Template Engine</h3>
-          <ul style={{ paddingLeft: '20px', marginBottom: '20px', lineHeight: '1.8' }}>
-            <li><strong>LEP Mode:</strong> Low Everyday Price templates with mandated white backgrounds, left-aligned blue text, and no promotional fluff.</li>
-            <li><strong>Social Safe Zones:</strong> Hard-coded exclusions for UI elements in Instagram Stories (Top 200px / Bottom 250px protection).</li>
-            <li><strong>Value Tiles:</strong> Immutable components for visual consistency (New, Clubcard, White Value).</li>
-          </ul>
+        {filteredRules.length === 0 && (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>No rules found matching "{search}"</div>
+        )}
 
-          <h3 style={docStyles.h3}>Safety & Logic Gates</h3>
-          <div style={{ ...docStyles.alert, ...docStyles.alertWarning }}>
-            <strong>People Detection:</strong> Integration with OpenCV to detect human faces in product imagery. Triggers a mandatory "Confirmation Required" workflow to ensure compliance with talent usage rights.
+        {filteredRules.map(rule => (
+          <div key={rule.id} style={docStyles.ruleBox}>
+            <div style={docStyles.ruleHeader}>
+              <span style={{ fontWeight: '600' }}>{rule.title}</span>
+              <span style={docStyles.ruleId}>Rule #{rule.id}</span>
+            </div>
+            <div style={docStyles.ruleContent}>
+              {rule.desc}
+            </div>
           </div>
-          <div style={{ ...docStyles.alert, ...docStyles.alertError }}>
-            <strong>Alcohol & Age Gating:</strong> Semantic detection of alcohol keywords forces the injection of high-contrast Drinkaware lock-ups.
-          </div>
-        </div>
-
-        {/* Compliance */}
-        <div id="compliance" style={docStyles.section}>
-          <h2 style={docStyles.h2}>Compliance Rulebook</h2>
-          <p style={docStyles.p}>
-            The system enforces rules derived from Appendix A & B of the Retail Guidelines.
-          </p>
-
-          <table style={docStyles.table}>
-            <thead>
-              <tr>
-                <th style={docStyles.th}>Category</th>
-                <th style={docStyles.th}>Rule / Constraint</th>
-                <th style={docStyles.th}>Enforcement</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style={docStyles.td}><strong>Alcohol</strong></td>
-                <td style={docStyles.td}>Mandatory Drinkaware lock-up (Black/White), Min Height 20px.</td>
-                <td style={docStyles.td}>Auto-Injection / Hard Fail if space insufficient</td>
-              </tr>
-              <tr>
-                <td style={docStyles.td}><strong>Forbidden Copy</strong></td>
-                <td style={docStyles.td}>No claims ("Best"), Money-back, Competitions, Sustainability.</td>
-                <td style={docStyles.td}>Hard Fail (E002)</td>
-              </tr>
-              <tr>
-                <td style={docStyles.td}><strong>Accessibility</strong></td>
-                <td style={docStyles.td}>Min Font Size 20px (Brand). WCAG AA Contrast.</td>
-                <td style={docStyles.td}>Auto-Scaling / Hard Fail</td>
-              </tr>
-              <tr>
-                <td style={docStyles.td}><strong>Layout</strong></td>
-                <td style={docStyles.td}>Packshot must be closest element to CTA. No Safe Zone violation.</td>
-                <td style={docStyles.td}>Geometric Solver</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Workflow */}
-        <div id="workflow" style={docStyles.section}>
-          <h2 style={docStyles.h2}>Usage Workflow</h2>
-          
-          <h3 style={docStyles.h3}>1. Asset Ingestion</h3>
-          <p style={docStyles.p}>
-            User uploads a Product Image (raw packshot) and a Logo. The background remover automatically cleans the product image.
-          </p>
-
-          <h3 style={docStyles.h3}>2. Specification</h3>
-          <p style={docStyles.p}>
-            User defines the campaign parameters: Headline, Subhead, CTA, Style, and Template Mode.
-          </p>
-
-          <h3 style={docStyles.h3}>3. Validation (The Gate)</h3>
-          <p style={docStyles.p}>
-            Before any pixels are drawn, the request passes through the <code>validator.py</code> engine. 
-            <ul>
-              <li>Check structural integrity.</li>
-              <li>Scan for forbidden keywords.</li>
-              <li>Verify visual constraints (e.g. White BG for LEP).</li>
-              <li>Scan image for People (OpenCV).</li>
-            </ul>
-          </p>
-
-          <h3 style={docStyles.h3}>4. Generation</h3>
-          <p style={docStyles.p}>
-            If validated, the <code>composer.py</code> engine calculates the optimal layout for every requested format (Square, Portrait, Landscape), obeying all safe zones and collision rules.
-          </p>
-        </div>
-
-        {/* Deployment */}
-        {/* Deployment */}
-        <div id="deploy" style={docStyles.section}>
-          <h2 style={docStyles.h2}>Deployment (Docker)</h2>
-          <p style={docStyles.p}>
-            The application is containerized for consistent deployment across environments.
-          </p>
-
-          <h3 style={docStyles.h3}>Prerequisites</h3>
-          <p style={docStyles.p}>Docker Desktop and Docker Compose.</p>
-
-          <h3 style={docStyles.h3}>Running the Stack</h3>
-          <div style={docStyles.codeBlock}>
-            {`# Build and Run
-docker-compose up --build
-
-# Backend will act on localhost:8000
-# Frontend will act on localhost:3000`}
-          </div>
-
-          <h3 style={docStyles.h3}>Backend Container</h3>
-          <p style={docStyles.p}>
-             Python 3.10-slim based. Installs OpenCV dependencies (libgl1) and Python requirements.
-          </p>
-
-          <h3 style={docStyles.h3}>Frontend Container</h3>
-          <p style={docStyles.p}>
-             Node 18-alpine based. Builds the Vite React app and serves it (dev mode for this demo).
-          </p>
-        </div>
+        ))}
 
       </div>
     </div>

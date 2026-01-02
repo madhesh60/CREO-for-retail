@@ -35,4 +35,24 @@ export async function generateImages(spec, productFile, logoFile, token) {
   }
 
   return await res.json();
+  return await res.json();
+}
+
+export async function generateAiImage(prompt) {
+  const formData = new FormData();
+  formData.append("prompt", prompt);
+
+  const res = await fetch(`${API_BASE}/ai-generate`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Unknown Error" }));
+    throw new Error(err.detail || "AI Generation failed");
+  }
+
+  // It returns binary image blob
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
 }
