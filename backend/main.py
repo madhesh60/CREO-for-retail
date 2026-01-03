@@ -88,22 +88,32 @@ async def get_cloud_images(current_user: UserModel = Depends(get_current_user)):
 # ---------------- EXTRACT ----------------
 @app.post("/extract")
 async def extract(
-    main_message: str = Form(...),
-    sub_message: str = Form(...),
-    cta_text: str = Form(...),
-    style: str = Form("clean"),
-    background_color: str = Form(None),
-    badge_color: str = Form(None),
-    badge_shape: str = Form(None),
+    main_message: Optional[str] = Form(None),
+    sub_message: Optional[str] = Form(None),
+    cta_text: Optional[str] = Form(None),
+    style: Optional[str] = Form("clean"),
+    background_color: Optional[str] = Form(None),
+    badge_color: Optional[str] = Form(None),
+    badge_shape: Optional[str] = Form(None),
+    tesco_tag: Optional[str] = Form(None),
+    value_tile_type: Optional[str] = Form(None),
+    clubcard_price: Optional[str] = Form(None),
+    regular_price: Optional[str] = Form(None),
+    clubcard_date: Optional[str] = Form(None),
 ):
     spec = {
-        "main_message": main_message.strip(),
-        "sub_message": sub_message.strip(),
-        "cta_text": cta_text.strip(),
-        "style": style.strip() or "clean",
+        "main_message": main_message.strip() if main_message else "",
+        "sub_message": sub_message.strip() if sub_message else "",
+        "cta_text": cta_text.strip() if cta_text else "",
+        "style": style.strip() if style else "clean",
         "background_color": background_color.strip() if background_color else None,
         "badge_color": badge_color.strip() if badge_color else None,
         "badge_shape": badge_shape.strip() if badge_shape else None,
+        "tesco_tag": tesco_tag.strip() if tesco_tag else None,
+        "value_tile_type": value_tile_type.strip() if value_tile_type else None,
+        "clubcard_price": clubcard_price.strip() if clubcard_price else None,
+        "regular_price": regular_price.strip() if regular_price else None,
+        "clubcard_date": clubcard_date.strip() if clubcard_date else None,
     }
     return spec
 

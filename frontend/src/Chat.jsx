@@ -13,7 +13,12 @@ export default function Chat() {
     style: "clean",
     background_color: "#a8ddef", // Default light blue
     badge_color: "#daa520", // Default gold
-    badge_shape: ""
+    badge_shape: "",
+    tesco_tag: "",
+    value_tile_type: "",
+    clubcard_price: "",
+    regular_price: "",
+    clubcard_date: ""
   });
 
   const [product, setProduct] = useState(null);
@@ -166,13 +171,16 @@ export default function Chat() {
             </div>
 
             <div>
-              <label style={styles.label}>CTA Text</label>
+              <label style={styles.label}>
+                CTA Text {form.value_tile_type === "Clubcard Value Tile" && <span style={{ color: '#cc0000', fontSize: '12px' }}>(Disabled for Clubcard)</span>}
+              </label>
               <input
                 name="cta_text"
                 placeholder="e.g. Shop Now"
-                value={form.cta_text}
+                value={form.value_tile_type === "Clubcard Value Tile" ? "" : form.cta_text}
                 onChange={handleChange}
-                style={styles.input}
+                style={{ ...styles.input, opacity: form.value_tile_type === "Clubcard Value Tile" ? 0.5 : 1, cursor: form.value_tile_type === "Clubcard Value Tile" ? 'not-allowed' : 'text' }}
+                disabled={form.value_tile_type === "Clubcard Value Tile"}
               />
             </div>
 
@@ -249,6 +257,54 @@ export default function Chat() {
                 <option value="hexagon">Hexagon</option>
               </select>
             </div>
+
+            <div style={styles.fullWidth}>
+              <label style={styles.label}>Tesco Tag (Mandatory for Tesco/Pinterest)</label>
+              <select
+                name="tesco_tag"
+                value={form.tesco_tag}
+                onChange={handleChange}
+                style={styles.select}
+              >
+                <option value="">None</option>
+                <option value="Only at Tesco">Only at Tesco</option>
+                <option value="Available at Tesco">Available at Tesco</option>
+                <option value="Selected stores. While stocks last.">Selected stores. While stocks last.</option>
+              </select>
+            </div>
+
+            <div style={styles.fullWidth}>
+              <label style={styles.label}>Value Tile</label>
+              <select name="value_tile_type" value={form.value_tile_type} onChange={handleChange} style={styles.select}>
+                <option value="">None</option>
+                <option value="New">New</option>
+                <option value="White Value Tile">White Value Tile</option>
+                <option value="Clubcard Value Tile">Clubcard Value Tile</option>
+              </select>
+            </div>
+
+            {form.value_tile_type === "Clubcard Value Tile" && (
+              <div style={{ ...styles.fullWidth, padding: '12px', background: '#FFFDE7', borderRadius: '8px', border: '1px solid #FFD600', marginBottom: '20px' }}>
+                <div style={{ color: '#00539F', fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>Clubcard Details</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#666' }}>Clubcard Price</label>
+                    <input name="clubcard_price" placeholder="£3.50" value={form.clubcard_price} onChange={handleChange} style={{ ...styles.input, width: '100%' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#666' }}>Regular Price</label>
+                    <input name="regular_price" placeholder="£5.00" value={form.regular_price} onChange={handleChange} style={{ ...styles.input, width: '100%' }} />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', color: '#666' }}>End Date (Strictly DD/MM)</label>
+                  <input name="clubcard_date" placeholder="DD/MM" value={form.clubcard_date} onChange={handleChange} style={{ ...styles.input, width: '100%' }} />
+                </div>
+                <div style={{ fontSize: '11px', color: '#E65100', marginTop: '8px', padding: '4px', background: 'rgba(230, 81, 0, 0.1)', borderRadius: '4px' }}>
+                  ⚠ Mandatory disclaimer ending in <b>{form.clubcard_date || 'DD/MM'}</b> will be applied. No CTAs permitted.
+                </div>
+              </div>
+            )}
 
             <div style={styles.sectionTitle}>Assets</div>
 

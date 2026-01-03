@@ -211,6 +211,38 @@ def compose_creative(bg, product, logo, spec, fmt):
         # Draw visual separator
         draw.line([(20, lockup_y), (W-20, lockup_y)], fill="black", width=2)
     
+    # --- TESCO TAG ---
+    tesco_tag = spec.get("tesco_tag")
+    # Check if mandatory for this format
+    fmt_rule = PLATFORM_RULES.get(fmt, {})
+    if fmt_rule.get("tag_required", False):
+        if not tesco_tag or tesco_tag == "None":
+             # STRICT FAIL as per requirement
+             # We rely on the upper layer to catch this, or we fail here.
+             # Since it's a specific format failure, we can return a failure image or raise error.
+             # Ideally we shouldn't have reached here if validation failed, but this is format-specific.
+             # We will draw a giant error to make it obvious, or (better) raise valid exception
+             # But let's just force valid text or fail. 
+             # Requirement: "reject generation".
+             raise ValueError(f"Tesco Tag is mandatory for format '{fmt}' but was not selected.")
+
+    if tesco_tag and tesco_tag != "None":
+        tag_fs = 14 
+        font_tag = load_font("Montserrat-Regular.ttf", tag_fs)
+        
+        # Calculate size
+        bbox = draw.textbbox((0, 0), tesco_tag, font=font_tag)
+        tag_h = bbox[3] - bbox[1] + 20 # Padding
+        
+        # Place at current page_bottom
+        tag_y = page_bottom - tag_h
+        page_bottom = tag_y - 10 # Update boundary for next elements
+        
+        # Draw
+        # Ensure contrast? Assuming light bg or clean style.
+        # If dark BG, swap color. We'll use compliant black for now as per clean style.
+        draw.text((W//2, tag_y + 5), tesco_tag, anchor="mt", fill="black", font=font_tag)
+
     # 2. CTA takes space above that
     cta_center_y = 0
     if has_cta:
@@ -276,9 +308,67 @@ def compose_creative(bg, product, logo, spec, fmt):
         lep_logo_y = py + (ph - lh) // 2
         canvas.paste(logo_resized, (lep_logo_x, lep_logo_y), logo_resized)
 
-    # --- 5. VALUE TILE ---
+    # --- 5. VALUE TILE & CLUBCARD LOGIC ---
     tile_type = spec.get("value_tile_type")
-    if tile_type:
+    
+    # Check Clubcard Mode
+    if tile_type == "Clubcard Value Tile":
+        # 1. Mandatory Disclaimer (Bottom)
+        c_date = spec.get("clubcard_date")
+        disclaimer_text = f"Available in selected stores. Clubcard/app required. Ends {c_date}"
+        
+        disc_fs = 12
+        font_disc = load_font("Montserrat-Regular.ttf", disc_fs)
+        
+        # Measure
+        bbox = draw.textbbox((0, 0), disclaimer_text, font=font_disc)
+        disc_h = bbox[3] - bbox[1] + 15
+        
+        # Place at bottom (If Tesco Tag exists, place ABOVE it? Or replace it? 
+        # Usually Clubcard disclaimer replaces standard tags or sits with them. 
+        # We will stack ABOVE the current page_bottom (which might have prompted a Tesco Tag already).
+        # Actually, Clubcard disclaimer often INCLUDES "Selected stores...". 
+        # The prompt says: "If Clubcard Value Tile is present, you must also include...".
+        # It's a specific legal string. We place it at page_bottom.
+        
+        disc_y = page_bottom - disc_h
+        page_bottom = disc_y - 10 # Shift up
+        
+        # Draw Disclaimer
+        draw.text((W//2, disc_y + 5), disclaimer_text, anchor="mt", fill="black", font=font_disc)
+
+        # 2. Draw Clubcard Tile (Top Left)
+        # Style: Yellow BG, Blue Text
+        t_y = safe_top + 20
+        t_x = 20
+        t_w = int(W * 0.35) # Wider
+        t_h = int(t_w * 0.8)
+        
+        cc_yellow = "#FFDD00"
+        cc_blue = "#00539F"
+        
+        # Shadow
+        draw.rectangle([t_x+5, t_y+5, t_x+t_w+5, t_y+t_h+5], fill="rgba(0,0,0,50)")
+        # Main Box
+        draw.rectangle([t_x, t_y, t_x+t_w, t_y+t_h], fill=cc_yellow)
+        
+        # Text: "Clubcard Price"
+        font_cc_label = load_font("Montserrat-Bold.ttf", int(t_h * 0.15))
+        draw.text((t_x + t_w//2, t_y + 15), "Clubcard Price", anchor="mt", fill=cc_blue, font=font_cc_label)
+        
+        # Price
+        price = spec.get("clubcard_price", "£0.00")
+        font_cc_price = load_font("Montserrat-Bold.ttf", int(t_h * 0.4))
+        draw.text((t_x + t_w//2, t_y + t_h//2), price, anchor="mm", fill=cc_blue, font=font_cc_price)
+        
+        # Regular Price
+        reg_price = spec.get("regular_price")
+        if reg_price:
+            font_reg = load_font("Montserrat-Regular.ttf", int(t_h * 0.12))
+            draw.text((t_x + t_w//2, t_y + t_h - 20), f"Regular Price: {reg_price}", anchor="mb", fill=cc_blue, font=font_reg)
+            
+    elif tile_type:
+        # Standard Generic/New Tile
         # Fixed position: Top Left (below safe zone)
         t_y = safe_top + 20
         t_x = 20

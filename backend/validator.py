@@ -38,6 +38,33 @@ def validate_spec(spec):
         
         # Mandatory Tag
         tag = LEP_TEMPLATE_RULES["required_tag"]
+
+    # 4. Tesco Tag Compliance
+    if spec.get("tesco_tag") and spec.get("tesco_tag") != "None":
+        from compliance_rules import TESCO_TAGS
+        if spec.get("tesco_tag") not in TESCO_TAGS:
+             errors.append(f"[{ERROR_CODES['TAG_COLLISION']}] Invalid Tesco Tag text. Must be one of: {', '.join(TESCO_TAGS)}")
+
+    # 5. Clubcard Compliance
+    if spec.get("value_tile_type") == "Clubcard Value Tile":
+        from compliance_rules import CLUBCARD_CONSTRAINTS
+        
+        # Rule: No CTA allowed
+        if spec.get("cta_text"):
+             errors.append(f"[{ERROR_CODES['TILE_CONSTRAINT']}] Clubcard creatives must NOT include a CTA.")
+             
+        # Rule: Date Format DD/MM
+        c_date = spec.get("clubcard_date")
+        if not c_date:
+             errors.append(f"[{ERROR_CODES['STRUCTURE_MISSING']}] Clubcard 'Ends DD/MM' date is mandatory.")
+        elif not re.match(r"^\d{1,2}/\d{1,2}$", c_date):
+             errors.append(f"[{ERROR_CODES['STRUCTURE_MISSING']}] Invalid Date format. Must be DD/MM.")
+             
+        # Rule: Price presence
+        if not spec.get("clubcard_price"):
+             errors.append(f"[{ERROR_CODES['STRUCTURE_MISSING']}] Clubcard Price is required for this tile.")
+
+    return errors
         # Check if tag is present in inputs? Or assume composer adds it?
         # User says "mandatory tag text". We can auto-add or validate.
         # Let's validate if user supplied text matches? or forbid custom text?
