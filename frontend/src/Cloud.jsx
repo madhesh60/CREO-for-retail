@@ -106,14 +106,36 @@ export default function Cloud() {
 
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '10px' }}>
                         {img.urls && img.urls.png ? (
-                          <a href={img.urls.png} download target="_blank" style={{ color: '#0070f3', fontSize: '12px', textDecoration: 'none', border: '1px solid #ccc', padding: '2px 6px', borderRadius: '4px' }}>PNG</a>
+                          <a href={img.urls.png} download={`${batchId}_${img.format}.png`} style={{ color: '#0070f3', fontSize: '12px', textDecoration: 'none', border: '1px solid #ccc', padding: '4px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center' }}>PNG</a>
                         ) : (
-                          <a href={displayUrl} download target="_blank" style={{ color: '#0070f3', fontSize: '12px', textDecoration: 'none', border: '1px solid #ccc', padding: '2px 6px', borderRadius: '4px' }}>PNG</a>
+                          <a href={displayUrl} download={`${batchId}_${img.format}.png`} style={{ color: '#0070f3', fontSize: '12px', textDecoration: 'none', border: '1px solid #ccc', padding: '4px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center' }}>PNG</a>
                         )}
 
                         {img.urls && img.urls.jpg && (
-                          <a href={img.urls.jpg} download target="_blank" style={{ color: '#0070f3', fontSize: '12px', textDecoration: 'none', border: '1px solid #ccc', padding: '2px 6px', borderRadius: '4px' }}>JPG</a>
+                          <a href={img.urls.jpg} download={`${batchId}_${img.format}.jpg`} style={{ color: '#0070f3', fontSize: '12px', textDecoration: 'none', border: '1px solid #ccc', padding: '4px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center' }}>JPG</a>
                         )}
+
+                        <button
+                          onClick={async () => {
+                            const url = img.urls?.png || displayUrl;
+                            if(!url) return;
+                            try {
+                              const blob = await (await fetch(url)).blob();
+                              const file = new File([blob], `${img.format}.png`, { type: blob.type });
+                              if(navigator.canShare?.({ files: [file] })) {
+                                navigator.share({ files: [file], title: 'Creative', text: 'Check this out!' });
+                              } else {
+                                alert("Sharing not supported. Please download.");
+                              }
+                            } catch(e) { console.error(e); }
+                          }}
+                          style={{
+                            color: '#0070f3', fontSize: '12px', background: 'white',
+                            border: '1px solid #ccc', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px'
+                          }}
+                        >
+                          Share
+                        </button>
                       </div>
                     </div>
                   )

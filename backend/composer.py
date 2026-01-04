@@ -203,9 +203,44 @@ def compose_creative(bg, product, logo, spec, fmt):
     canvas.paste(prod_shadow, (sx, sy), prod_shadow)
     canvas.paste(product_resized, (px, py), product_resized)
 
-    # --- 6. FLOATING ELEMENTS (Clubcard Tile) ---
-    # Only tile type allowed float
-    if tile_type == "Clubcard Value Tile":
+    # --- 6. FLOATING ELEMENTS (Value Tiles) ---
+    # Strictly Fixed Position: Top Left inside safe zone (Padded)
+    if tile_type in ["New", "White Value Tile", "Clubcard Value Tile"]:
+         t_x = 30
+         t_y = safe_top + 10
+         
+         # Common Shadow
+         # We'll calculate specific w/h per type
+
+    if tile_type == "New":
+        # Red Roundel
+        r = int(W * 0.12) # Radius
+        # Center of circle
+        cx, cy = t_x + r, t_y + r
+        
+        # Shadow
+        draw.ellipse([cx-r+5, cy-r+5, cx+r+5, cy+r+5], fill="rgba(0,0,0,50)")
+        # Red Circle
+        draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill="#CC0000", outline="white", width=2)
+        
+        # Text "NEW"
+        font_new = load_font("Montserrat-Bold.ttf", int(r * 0.6))
+        draw.text((cx, cy), "NEW", anchor="mm", fill="white", font=font_new)
+
+    elif tile_type == "White Value Tile":
+        # White Roundel with Price
+        r = int(W * 0.14)
+        cx, cy = t_x + r, t_y + r
+        
+        draw.ellipse([cx-r+5, cy-r+5, cx+r+5, cy+r+5], fill="rgba(0,0,0,50)")
+        draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill="white", outline="#333333", width=1)
+        
+        price = spec.get("value_tile_text", "£0.00")
+        # Auto-fit text check? Assuming short price.
+        font_price = load_font("Montserrat-Bold.ttf", int(r * 0.5))
+        draw.text((cx, cy), price, anchor="mm", fill="#CC0000", font=font_price) # Red price usually? Or black. "White Value Tile" usually has red/black price. Sticking to Red for impact, or Black for neutral. Let's use Red for price.
+
+    elif tile_type == "Clubcard Value Tile":
          # Fixed Position: Top Left inside safe zone
          cc_x = 30
          cc_y = safe_top + 10

@@ -1,4 +1,3 @@
-
 import re
 import cv2
 import numpy as np
@@ -19,16 +18,22 @@ def validate_spec(spec):
     # 2. Tile Constraints
     tile_type = spec.get("value_tile_type")
     if tile_type:
-        schema = TILE_SCHEMAS.get(tile_type)
-        if not schema:
-            pass # Or fail if strictly only valid types allowed?
-        else:
-            # Check immutability
-            if tile_type == "New":
-                if spec.get("value_tile_text") and spec.get("value_tile_text") != "New":
-                    errors.append(f"[{ERROR_CODES['TILE_CONSTRAINT']}] 'New' tile text is non-editable.")
-            # White Value Tile -> Only price
-            # Clubcard -> Offer + Regular
+        ALLOWED = ["New", "White Value Tile", "Clubcard Value Tile"]
+        if tile_type not in ALLOWED:
+             errors.append(f"[{ERROR_CODES['TILE_CONSTRAINT']}] Invalid Tile Type. Only {', '.join(ALLOWED)} allowed.")
+        
+        # Strict Content Locking
+        if tile_type == "New":
+            # Must be empty or "New"
+            txt = spec.get("value_tile_text", "").strip()
+            if txt and txt.lower() != "new":
+                errors.append(f"[{ERROR_CODES['TILE_CONSTRAINT']}] 'New' tile is locked. No custom text allowed.")
+
+        elif tile_type == "White Value Tile":
+            # Must contain price-like digits
+            txt = spec.get("value_tile_text", "")
+            if not any(c.isdigit() for c in txt):
+                 errors.append(f"[{ERROR_CODES['TILE_CONSTRAINT']}] White Value Tile must contain a price.")
             
     # 3. LEP Mode Check
     if spec.get("template") == "LEP":
