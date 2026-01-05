@@ -91,14 +91,14 @@ def compose_creative(bg, product, logo, spec, fmt):
         # Line
         draw.line([(W*0.05, lockup_y), (W*0.95, lockup_y)], fill=dw_color, width=2)
         # Text
-        font_dw = load_font("Montserrat-Bold.ttf", int(alcohol_h * 0.3))
+        font_dw = load_font("Montserrat-Bold.ttf", int(alcohol_h * 1))
         draw.text((W//2, lockup_y + alcohol_h//2), "drinkaware.co.uk", anchor="mm", fill=dw_color, font=font_dw)
 
     # B. Tesco Tag
     tesco_tag = spec.get("tesco_tag")
     if tesco_tag and tesco_tag != "None":
-        tag_fs = int(H * 0.018)
-        if tag_fs < 14: tag_fs = 14
+        tag_fs = int(H * 0.025)
+        if tag_fs < 16: tag_fs = 16
         font_tag = load_font("Montserrat-Regular.ttf", tag_fs)
         
         # Padding
@@ -118,8 +118,8 @@ def compose_creative(bg, product, logo, spec, fmt):
              raise ValueError("Compliance Violation: Clubcard creatives MUST include an end date (DD/MM).")
              
          disclaimer = f"Available in selected stores. Clubcard/app required. Ends {c_date}"
-         disc_fs = int(H * 0.012)
-         if disc_fs < 12: disc_fs = 12
+         disc_fs = int(H * 0.018)
+         if disc_fs < 14: disc_fs = 14
          font_disc = load_font("Montserrat-Regular.ttf", disc_fs)
          
          bbox_d = draw.textbbox((0, 0), disclaimer, font=font_disc)
@@ -245,8 +245,8 @@ def compose_creative(bg, product, logo, spec, fmt):
          cc_x = 30
          cc_y = safe_top + 10
          
-         # Width: 32% of W
-         cc_w = int(W * 0.32)
+         # Width: Reduced to 26% to prevent overlap with centered logo/text
+         cc_w = int(W * 0.26)
          cc_h = int(cc_w * 0.75)
          
          cc_yellow = "#FFDD00"
@@ -256,11 +256,11 @@ def compose_creative(bg, product, logo, spec, fmt):
          draw.rectangle([cc_x+5, cc_y+5, cc_x+cc_w+5, cc_y+cc_h+5], fill="rgba(0,0,0,50)")
          draw.rectangle([cc_x, cc_y, cc_x+cc_w, cc_y+cc_h], fill=cc_yellow)
          
-         f_ccl = load_font("Montserrat-Bold.ttf", int(cc_h * 0.14))
+         f_ccl = load_font("Montserrat-Bold.ttf", int(cc_h * 0.18))
          draw.text((cc_x + cc_w//2, cc_y + 15), "Clubcard Price", anchor="mt", fill=cc_blue, font=f_ccl)
          
          price = spec.get("clubcard_price", "£0.00")
-         f_ccp = load_font("Montserrat-Bold.ttf", int(cc_h * 0.35))
+         f_ccp = load_font("Montserrat-Bold.ttf", int(cc_h * 0.42))
          draw.text((cc_x + cc_w//2, cc_y + cc_h//2 + 5), price, anchor="mm", fill=cc_blue, font=f_ccp)
 
     return canvas
