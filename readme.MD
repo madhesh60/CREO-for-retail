@@ -171,4 +171,4 @@ npm run dev
 | **Component Library** | [localhost:3000/docs](http://localhost:3000/docs) | Internal frontend component documentation. |
 
 ---
-**Authored by Antigravity Agent**
+
