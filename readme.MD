@@ -16,7 +16,7 @@ Unlike standard generative tools, this system is built on a **"Compliance-First"
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
 ### 🛡️ Strict Compliance Engine
 *   **Zero Tolerance Policy**: Hard-coded rejection of forbidden content (Financial claims, Competitions, Sustainability assertions).
@@ -110,8 +110,7 @@ Spin up both the Backend API and Frontend Client in isolated containers with a s
 
 ```bash
 # 1. Clone the repository
-git clone <repo-url>
-cd retail-creative-studio
+git clone https://github.com/madhesh60/CREO-for-retail
 
 # 2. Build and Run
 docker-compose up --build
