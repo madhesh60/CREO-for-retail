@@ -161,14 +161,6 @@ npm run dev
 
 ## 📚 Documentation
 
-### 🔗 Quick Links (Local)
-
-| Resource | URL | Description |
-| :--- | :--- | :--- |
-| **API Documentation** | [localhost:8000/docs](http://localhost:8000/docs) | Interactive Swagger UI for Backend endpoints. |
-| **Alternative Docs** | [localhost:8000/redoc](http://localhost:8000/redoc) | ReDoc format documentation. |
-| **Frontend Application** | [localhost:3000](http://localhost:3000) | Main application interface. |
-| **Component Library** | [localhost:3000/docs](http://localhost:3000/docs) | Internal frontend component documentation. |
 
 ---
 
