@@ -1,6 +1,5 @@
 # 🎨 AI Retail Creative Studio
 
-
 **Strict Compliance Generation Engine for Enterprise Retail Assets**
 
 [![React](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
@@ -10,7 +9,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 ---
-
 
 The **AI Retail Creative Studio** is a state-of-the-art automated design system built to generate localized, brand-compliant retail marketing assets at scale.
 
@@ -47,13 +45,19 @@ Unlike standard generative tools, this system is built on a **"Compliance-First"
 
 The solution uses a decoupled **React + FastAPI** architecture, containerized for rapid deployment.
 
-```mermaid
-graph TD
-    A[Frontend: React/Vite] -->|HTTP/JSON| B[Backend: FastAPI]
-    B --> C{Validator Gate}
-    C -->|Pass| D[Composer Engine]
-    C -->|Fail| E[Error Response]
-    D --> F[Generate Assets]
+```text
+[Frontend Client] --(1. POST /generate)--> [Backend API]
+                                               |
+                                               v
+                                      {Compliance Gate}
+                                       |      |
+                    (Fail) <-----------+      +-----------> (Pass)
+                       |                                       |
+                       v                                       v
+                [Error Response]                         [Composer Engine]
+                                                               |
+                                                               v
+                                                       [Generated Assets]
 ```
 
 | Component | Tech Stack | Description |
@@ -126,7 +130,14 @@ npm run dev
 
 ## 📚 Documentation
 
-Full technical documentation is available within the application at the `/docs` route.
+### 🔗 Quick Links (Local)
+
+| Resource | URL | Description |
+| :--- | :--- | :--- |
+| **API Documentation** | [localhost:8000/docs](http://localhost:8000/docs) | Interactive Swagger UI for Backend endpoints. |
+| **Alternative Docs** | [localhost:8000/redoc](http://localhost:8000/redoc) | ReDoc format documentation. |
+| **Frontend Application** | [localhost:3000](http://localhost:3000) | Main application interface. |
+| **Component Library** | [localhost:3000/docs](http://localhost:3000/docs) | Internal frontend component documentation. |
 
 ---
 **Authored by Antigravity Agent**
