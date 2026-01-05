@@ -82,16 +82,36 @@ def compose_creative(bg, product, logo, spec, fmt):
 
     # A. Drinkaware
     if is_alcohol:
-        # Height: ~10% of screen or min 100px
-        alcohol_h = max(ALCOHOL_RULES["lockup_min_height"], int(H * 0.08))
+        # Height: ~10% of screen or min 20px (Strict Rule)
+        min_dh = ALCOHOL_RULES.get("lockup_min_height", 20)
+        alcohol_h = max(min_dh, int(H * 0.08))
         lockup_y = current_bottom_y - alcohol_h
         current_bottom_y = lockup_y - 20 
 
-        dw_color = "black" 
+        # Contrast Check
+        # Sample the background in the lockup area to determine color
+        # Since canvas might be RGBA, we handle transparency if needed, but usually BG is solid.
+        # We'll take a crop of the bottom area
+        try:
+            # Crop box: (0, lockup_y, W, lockup_y + alcohol_h)
+            # Resize to 1x1 to get average color
+            region = canvas.crop((0, int(lockup_y), int(W), int(lockup_y + alcohol_h)))
+            avg_color = region.resize((1, 1)).getpixel((0, 0))
+            
+            # Brightness formula: (R+G+B)/3 or luminance
+            if len(avg_color) >= 3:
+                brightness = sum(avg_color[:3]) / 3
+            else:
+                brightness = 255 # Default white
+            
+            dw_color = "white" if brightness < 128 else "black"
+        except Exception:
+            dw_color = "black" # Fallback
+
         # Line
         draw.line([(W*0.05, lockup_y), (W*0.95, lockup_y)], fill=dw_color, width=2)
         # Text
-        font_dw = load_font("Montserrat-Bold.ttf", int(alcohol_h * 1))
+        font_dw = load_font("Montserrat-Bold.ttf", int(alcohol_h * 0.45))
         draw.text((W//2, lockup_y + alcohol_h//2), "drinkaware.co.uk", anchor="mm", fill=dw_color, font=font_dw)
 
     # B. Tesco Tag
@@ -163,104 +183,124 @@ def compose_creative(bg, product, logo, spec, fmt):
         bbox_s = draw.textbbox((0, 0), sub_text, font=font_sub)
         current_top_y += (bbox_s[3] - bbox_s[1]) + 40 
 
-    # --- 5. PACKSHOT (Center Fill) ---
-    # "ervey image the image shoul be in the center"
-    vp_height = current_bottom_y - current_top_y
+    # --- 5. CENTER CONTENT (Strict Product Centering + Sidekick) ---
+    # Strategy: Product is ALWAYS visual center. Sidekick hangs to the right.
+    # If Sidekick hits edge, we scale down the Product to make room, but KEEP Product centered.
     
-    if vp_height < 50:
-         raise ValueError(f"Compliance Violation: Not enough vertical space ({vp_height}px) for product in {fmt}. Layout rejected.")
+    side_element = None
+    side_w, side_h = 0, 0
+    gap = 30 # px
+    
+    # A. Determine Sidekick
+    if tile_type == "Clubcard Value Tile":
+        side_element = "Clubcard"
+        # Dimensions for Clubcard (Reduce to ~26% W as requested, maintaining aspect)
+        side_w = int(W * 0.26)
+        side_h = int(side_w * 0.75)
+    elif spec.get("cta_text") and not is_alcohol: 
+        # Render CTA if text exists (and not overridden by Clubcard)
+        side_element = "CTA"
+        cta_txt = spec.get("cta_text", "SHOP NOW").upper()
+        # Estimate dimensions
+        est_fs = int(H * 0.02)
+        if est_fs < 14: est_fs = 14
+        f_cta = load_font("Montserrat-Bold.ttf", est_fs)
+        bbox_c = draw.textbbox((0,0), cta_txt, font=f_cta)
+        txt_w = bbox_c[2] - bbox_c[0]
+        side_w = txt_w + 60 # Padding
+        side_h = int(est_fs * 2.5) 
 
+    # B. Vertical Space Calculation
+    vp_height = current_bottom_y - current_top_y
+    if vp_height < 50:
+         raise ValueError(f"Compliance Violation: Not enough vertical space ({vp_height}px) for product. Layout rejected.")
+
+    # C. Product Prep
     product = remove_bg(product)
+    p_ratio = product.width / product.height
     
-    # 85% of available height
+    # Initial Target Height for Product (85% of viewport)
     target_h = int(vp_height * 0.85)
     if target_h < 10: target_h = 10
+    calc_pw = int(target_h * p_ratio)
     
-    # Constraint by width (don't touch edges, max 80%)
-    target_w_max = int(W * 0.8)
+    # D. Strict Centering & Side Constraint Logic
+    # Concept: We have width W. Center is W/2.
+    # Product occupies [W/2 - pw/2, W/2 + pw/2].
+    # Sidekick occupies [W/2 + pw/2 + gap, W/2 + pw/2 + gap + side_w].
+    # Constraint: The Right Edge of Sidekick must be < W - margin.
     
-    # Standard calc
-    p_ratio = product.width / product.height
-    calc_w = int(target_h * p_ratio)
+    safe_margin_x = int(W * 0.05)
+    max_x = W - safe_margin_x
     
-    if calc_w > target_w_max:
-        calc_w = target_w_max
-        target_h = int(calc_w / p_ratio)
+    current_right_edge = (W // 2) + (calc_pw // 2) + (gap + side_w if side_element else 0)
     
-    product_resized = product.resize((calc_w, target_h), Image.Resampling.LANCZOS)
+    if current_right_edge > max_x:
+        # We need to shrink the Product (which shrinks pw). 
+        # Sidekick size is fixed or proportional? Let's scale Sidekick proportionally too to maintain balance.
+        # Equation: (W/2) + (h*ratio / 2) + gap + (side_w * scalefactor?) ... roughly.
+        # Easier approach: Calculate required reduction factor.
+        
+        # Available width for (HalfProduct + Gap + Sidekick)
+        available_right_width = (W // 2) - safe_margin_x
+        required_right_width = (calc_pw // 2) + (gap + number_or_zero(side_w) if side_element else 0)
+        
+        scale_factor = available_right_width / required_right_width
+        
+        # Apply Scale
+        target_h = int(target_h * scale_factor)
+        calc_pw = int(target_h * p_ratio)
+        if side_element:
+            side_w = int(side_w * scale_factor)
+            side_h = int(side_h * scale_factor)
+            gap = int(gap * scale_factor)
+
+    # E. Positioning (STRICT CENTER)
+    product_resized = product.resize((calc_pw, target_h), Image.Resampling.LANCZOS)
     
-    # STRICT CENTER
-    # X Center: (W - calc_w) // 2
-    # Y Center: Band middle
+    # Center X
+    px = (W - calc_pw) // 2
+    
+    # Center Y (Visual Band)
     band_center = current_top_y + (vp_height // 2)
     py = band_center - (target_h // 2)
-    px = (W - calc_w) // 2
     
-    # Shadow
+    # F. Render Product
     prod_shadow, shadow_offset = add_shadow(product_resized, blur_radius=25, offset=(0, 20))
-    sx = px - shadow_offset
-    sy = py - shadow_offset
-    canvas.paste(prod_shadow, (sx, sy), prod_shadow)
+    canvas.paste(prod_shadow, (px - shadow_offset, py - shadow_offset), prod_shadow)
     canvas.paste(product_resized, (px, py), product_resized)
-
-    # --- 6. FLOATING ELEMENTS (Value Tiles) ---
-    # Strictly Fixed Position: Top Left inside safe zone (Padded)
-    if tile_type in ["New", "White Value Tile", "Clubcard Value Tile"]:
-         t_x = 30
-         t_y = safe_top + 10
-         
-         # Common Shadow
-         # We'll calculate specific w/h per type
-
-    if tile_type == "New":
-        # Red Roundel
-        r = int(W * 0.12) # Radius
-        # Center of circle
-        cx, cy = t_x + r, t_y + r
+    
+    # G. Render Sidekick (Right Side)
+    if side_element:
+        sx = px + calc_pw + gap
+        sy = band_center - (side_h // 2) # Vertically centered to product visual center
         
-        # Shadow
-        draw.ellipse([cx-r+5, cy-r+5, cx+r+5, cy+r+5], fill="rgba(0,0,0,50)")
-        # Red Circle
-        draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill="#CC0000", outline="white", width=2)
-        
-        # Text "NEW"
-        font_new = load_font("Montserrat-Bold.ttf", int(r * 0.6))
-        draw.text((cx, cy), "NEW", anchor="mm", fill="white", font=font_new)
-
-    elif tile_type == "White Value Tile":
-        # White Roundel with Price
-        r = int(W * 0.14)
-        cx, cy = t_x + r, t_y + r
-        
-        draw.ellipse([cx-r+5, cy-r+5, cx+r+5, cy+r+5], fill="rgba(0,0,0,50)")
-        draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill="white", outline="#333333", width=1)
-        
-        price = spec.get("value_tile_text", "£0.00")
-        # Auto-fit text check? Assuming short price.
-        font_price = load_font("Montserrat-Bold.ttf", int(r * 0.5))
-        draw.text((cx, cy), price, anchor="mm", fill="#CC0000", font=font_price) # Red price usually? Or black. "White Value Tile" usually has red/black price. Sticking to Red for impact, or Black for neutral. Let's use Red for price.
-
-    elif tile_type == "Clubcard Value Tile":
-         # Fixed Position: Top Left inside safe zone
-         cc_x = 30
-         cc_y = safe_top + 10
-         
-         # Width: Reduced to 26% to prevent overlap with centered logo/text
-         cc_w = int(W * 0.26)
-         cc_h = int(cc_w * 0.75)
-         
-         cc_yellow = "#FFDD00"
-         cc_blue = "#00539F"
-         
-         # Draw
-         draw.rectangle([cc_x+5, cc_y+5, cc_x+cc_w+5, cc_y+cc_h+5], fill="rgba(0,0,0,50)")
-         draw.rectangle([cc_x, cc_y, cc_x+cc_w, cc_y+cc_h], fill=cc_yellow)
-         
-         f_ccl = load_font("Montserrat-Bold.ttf", int(cc_h * 0.18))
-         draw.text((cc_x + cc_w//2, cc_y + 15), "Clubcard Price", anchor="mt", fill=cc_blue, font=f_ccl)
-         
-         price = spec.get("clubcard_price", "£0.00")
-         f_ccp = load_font("Montserrat-Bold.ttf", int(cc_h * 0.42))
-         draw.text((cc_x + cc_w//2, cc_y + cc_h//2 + 5), price, anchor="mm", fill=cc_blue, font=f_ccp)
+        if side_element == "CTA":
+            # Draw CTA Button (Pill Shape)
+            cta_color = "#00539F" # Tesco Blue
+            draw.rounded_rectangle([sx, sy, sx+side_w, sy+side_h], radius=side_h//2, fill=cta_color)
+            
+            # Text
+            f_cta_render = load_font("Montserrat-Bold.ttf", int(side_h * 0.4))
+            draw.text((sx + side_w//2, sy + side_h//2), cta_txt, anchor="mm", fill="white", font=f_cta_render)
+            
+        elif side_element == "Clubcard":
+             # Draw Clubcard Tile (Yellow/Blue Lozenge style or Rect)
+             cc_w, cc_h = side_w, side_h
+             cc_x, cc_y = sx, sy
+             
+             cc_yellow = "#FFDD00"
+             cc_blue = "#00539F"
+             
+             # Shadow
+             draw.rectangle([cc_x+5, cc_y+5, cc_x+cc_w+5, cc_y+cc_h+5], fill="rgba(0,0,0,50)")
+             draw.rectangle([cc_x, cc_y, cc_x+cc_w, cc_y+cc_h], fill=cc_yellow)
+             
+             f_ccl = load_font("Montserrat-Bold.ttf", int(cc_h * 0.18))
+             draw.text((cc_x + cc_w//2, cc_y + 15), "Clubcard Price", anchor="mt", fill=cc_blue, font=f_ccl)
+             
+             price = spec.get("clubcard_price", "£0.00")
+             f_ccp = load_font("Montserrat-Bold.ttf", int(cc_h * 0.42))
+             draw.text((cc_x + cc_w//2, cc_y + cc_h//2 + 5), price, anchor="mm", fill=cc_blue, font=f_ccp)
 
     return canvas
