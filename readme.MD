@@ -156,11 +156,5 @@ npm run dev
     *   📱 **9:16** (Story)
     *   🟦 **1:1** (Feed)
     *   📺 **16:9** (Landscape)
-
----
-
-## 📚 Documentation
-
-
 ---
 
