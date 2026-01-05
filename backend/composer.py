@@ -197,18 +197,14 @@ def compose_creative(bg, product, logo, spec, fmt):
         # Dimensions for Clubcard (Reduce to ~26% W as requested, maintaining aspect)
         side_w = int(W * 0.26)
         side_h = int(side_w * 0.75)
-    elif spec.get("cta_text") and not is_alcohol: 
-        # Render CTA if text exists (and not overridden by Clubcard)
+    elif spec.get("cta_text"): 
+        # Render CTA if text exists (Removing is_alcohol block to allow badge rendering)
         side_element = "CTA"
         cta_txt = spec.get("cta_text", "SHOP NOW").upper()
-        # Estimate dimensions
-        est_fs = int(H * 0.02)
-        if est_fs < 14: est_fs = 14
-        f_cta = load_font("Montserrat-Bold.ttf", est_fs)
-        bbox_c = draw.textbbox((0,0), cta_txt, font=f_cta)
-        txt_w = bbox_c[2] - bbox_c[0]
-        side_w = txt_w + 60 # Padding
-        side_h = int(est_fs * 2.5) 
+        # Dimensions for CTA Badge (Roundel)
+        r_cta = int(W * 0.11) # Slightly smaller than New tile
+        side_w = r_cta * 2
+        side_h = r_cta * 2
 
     # B. Vertical Space Calculation
     vp_height = current_bottom_y - current_top_y
@@ -243,7 +239,7 @@ def compose_creative(bg, product, logo, spec, fmt):
         
         # Available width for (HalfProduct + Gap + Sidekick)
         available_right_width = (W // 2) - safe_margin_x
-        required_right_width = (calc_pw // 2) + (gap + number_or_zero(side_w) if side_element else 0)
+        required_right_width = (calc_pw // 2) + (gap + side_w if side_element else 0)
         
         scale_factor = available_right_width / required_right_width
         
@@ -253,6 +249,8 @@ def compose_creative(bg, product, logo, spec, fmt):
         if side_element:
             side_w = int(side_w * scale_factor)
             side_h = int(side_h * scale_factor)
+            # Recalculate radius for CTA
+            r_cta = side_w // 2
             gap = int(gap * scale_factor)
 
     # E. Positioning (STRICT CENTER)
@@ -276,13 +274,31 @@ def compose_creative(bg, product, logo, spec, fmt):
         sy = band_center - (side_h // 2) # Vertically centered to product visual center
         
         if side_element == "CTA":
-            # Draw CTA Button (Pill Shape)
+            # Draw CTA Circular Badge
             cta_color = "#00539F" # Tesco Blue
-            draw.rounded_rectangle([sx, sy, sx+side_w, sy+side_h], radius=side_h//2, fill=cta_color)
+            cx, cy = sx + r_cta, sy + r_cta
             
-            # Text
-            f_cta_render = load_font("Montserrat-Bold.ttf", int(side_h * 0.4))
-            draw.text((sx + side_w//2, sy + side_h//2), cta_txt, anchor="mm", fill="white", font=f_cta_render)
+            # Shadow
+            draw.ellipse([cx-r_cta+5, cy-r_cta+5, cx+r_cta+5, cy+r_cta+5], fill="rgba(0,0,0,50)")
+            # Circle
+            draw.ellipse([cx-r_cta, cy-r_cta, cx+r_cta, cy+r_cta], fill=cta_color, outline="white", width=2)
+            
+            # Text formatting
+            # Auto-wrap for CTA badge? Usually short. "SHOP NOW"
+            f_cta_render = load_font("Montserrat-Bold.ttf", int(r_cta * 0.45))
+            
+            # Split lines roughly?
+            words = cta_txt.split()
+            if len(words) > 1 and len(cta_txt) > 8:
+                 # Stack
+                 mid = len(words)//2
+                 l1 = " ".join(words[:mid])
+                 l2 = " ".join(words[mid:])
+                 th = draw.textbbox((0,0), l1, font=f_cta_render)[3]
+                 draw.text((cx, cy - th*0.6), l1, anchor="mm", fill="white", font=f_cta_render)
+                 draw.text((cx, cy + th*0.6), l2, anchor="mm", fill="white", font=f_cta_render)
+            else:
+                 draw.text((cx, cy), cta_txt, anchor="mm", fill="white", font=f_cta_render)
             
         elif side_element == "Clubcard":
              # Draw Clubcard Tile (Yellow/Blue Lozenge style or Rect)
