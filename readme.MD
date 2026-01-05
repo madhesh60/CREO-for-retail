@@ -45,20 +45,51 @@ Unlike standard generative tools, this system is built on a **"Compliance-First"
 
 The solution uses a decoupled **React + FastAPI** architecture, containerized for rapid deployment.
 
-```text
-[Frontend Client] --(1. POST /generate)--> [Backend API]
-                                               |
-                                               v
-                                      {Compliance Gate}
-                                       |      |
-                    (Fail) <-----------+      +-----------> (Pass)
-                       |                                       |
-                       v                                       v
-                [Error Response]                         [Composer Engine]
-                                                               |
-                                                               v
-                                                       [Generated Assets]
+```mermaid
+flowchart TD
+    %% Nodes
+    Client([Frontend UI])
+    API[FastAPI Gateway]
+    
+    subgraph Engine [Core Logic Engine]
+        direction TB
+        Validator{Compliance Validator}
+        CV[Computer Vision Agent]
+        Composer[Layout Composer]
+        Formatter[Asset Formatter]
+    end
+    
+    %% Database
+    DB[(Banned Words DB)]
+
+    %% Flow
+    Client -->|1. Upload & Config| API
+    API --> Validator
+    
+    Validator -->|Check Text| DB
+    Validator -->|Check Image| CV
+    
+    CV --Face Detected--> Validator
+    
+    Validator --Pass--> Composer
+    Validator --Fail--> Client
+    
+    Composer --> Formatter
+    Formatter -->|2. Return Assets| Client
+
+    %% Styling
+    classDef primary fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef warning fill:#fff3e0,stroke:#ff6f00,stroke-width:2px;
+    class Client,API,Composer,Formatter primary;
+    class Validator,CV warning;
 ```
+
+### 🔄 Data Flow Protocol
+1.  **Ingestion**: User uploads raw assets via the **React Frontend**.
+2.  **Validation Gate**: The **FastAPI** backend runs the `Compliance Validator` against strict rules (No faces, no banned words).
+3.  **Visual Processing**: The **Computer Vision Agent** (OpenCV) scans images for human presence.
+4.  **Composition**: If compliant, the **Composer** solves the layout geometry using physics-based collision detection.
+5.  **Delivery**: Assets are formatted and returned to the client as specific retail variants (Story, Feed, Landscape).
 
 | Component | Tech Stack | Description |
 | :--- | :--- | :--- |
