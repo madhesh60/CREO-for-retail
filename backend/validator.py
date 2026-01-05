@@ -45,8 +45,18 @@ def validate_spec(spec):
         tag = LEP_TEMPLATE_RULES["required_tag"]
 
     # 4. Tesco Tag Compliance
+    # Check strict requirement based on formats
+    from formats import FORMATS
+    from compliance_rules import TAG_RULES, TESCO_TAGS
+    
+    # If any active format requires a tag (e.g. Pinterest)
+    chk_platforms = [f for f in FORMATS.keys() if f in TAG_RULES["mandatory_platforms"]]
+    
+    if chk_platforms:
+        if not spec.get("tesco_tag") or spec.get("tesco_tag") == "None":
+             errors.append(f"[{ERROR_CODES['TAG_MISSING']}] Tesco Tag is MANDATORY for {', '.join(chk_platforms)}.")
+
     if spec.get("tesco_tag") and spec.get("tesco_tag") != "None":
-        from compliance_rules import TESCO_TAGS
         if spec.get("tesco_tag") not in TESCO_TAGS:
              errors.append(f"[{ERROR_CODES['TAG_COLLISION']}] Invalid Tesco Tag text. Must be one of: {', '.join(TESCO_TAGS)}")
 
