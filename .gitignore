@@ -1,6 +1,7 @@
 # Python virtual environment
 backend/venv/
 backend/.env
+AD-generator/.env
 venv/
 .venv/
 __pycache__/
