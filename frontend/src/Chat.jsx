@@ -21,7 +21,7 @@ export default function Chat() {
     clubcard_date: ""
   });
 
-  const [product, setProduct] = useState(null);
+  const [products, setProducts] = useState([]); // Multiple products
   const [logo, setLogo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState(null);
@@ -49,8 +49,8 @@ export default function Chat() {
   };
 
   const generate = async (overrides = {}) => {
-    if (!product || !logo) {
-      alert("Upload product and logo");
+    if (products.length === 0 || !logo) {
+      alert("Upload at least one product and a logo");
       return;
     }
 
@@ -75,16 +75,14 @@ export default function Chat() {
       const spec = await extractSpec(extractData);
 
       // Ensure overrides are carried over to spec if extracted spec doesn't have them
-      // (The extraction might ignore unknown fields, so we might need to manually ensure they are passed to generateImages if generateImages uses spec)
-      // Actually generateImages takes the spec object. We should manually inject overrides into spec if needed.
       if (overrides.confirm_people) spec.confirm_people = true;
       if (overrides.confirm_drinkaware) spec.confirm_drinkaware = true;
-      // Also ensure they are in the persistent form/spec if needed
       if (currentData.confirm_people) spec.confirm_people = true;
       if (currentData.confirm_drinkaware) spec.confirm_drinkaware = true;
 
       // -------- STEP 2: GENERATE --------
-      const outputs = await generateImages(spec, product, logo, token);
+      // Pass 'products' array to api function
+      const outputs = await generateImages(spec, products, logo, token);
       setImages(outputs);
 
     } catch (e) {
@@ -100,42 +98,29 @@ export default function Chat() {
       <div style={styles.hero}>
         <div style={styles.heroContent}>
           <div style={styles.illustration}>
-            {/* Improved SVG illustration matching the reference: line art llama with VR headset, waving */}
+            {/* SVG illustration */}
             <svg viewBox="0 0 200 250" style={styles.illustrationSvg} xmlns="http://www.w3.org/2000/svg">
-              {/* Body */}
               <ellipse cx="100" cy="140" rx="60" ry="70" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              {/* Head */}
               <circle cx="100" cy="70" r="40" fill="none" stroke="currentColor" strokeWidth="2" />
-              {/* Ears */}
               <path d="M70 50 Q60 30 80 40" fill="none" stroke="currentColor" strokeWidth="2" />
               <path d="M130 50 Q140 30 120 40" fill="none" stroke="currentColor" strokeWidth="2" />
-              {/* Eyes */}
               <circle cx="85" cy="65" r="4" fill="none" stroke="currentColor" strokeWidth="1" />
               <circle cx="115" cy="65" r="4" fill="none" stroke="currentColor" strokeWidth="1" />
-              {/* Mouth/Smile */}
               <path d="M90 85 Q100 95 110 85" fill="none" stroke="currentColor" strokeWidth="2" />
-              {/* Neck */}
               <path d="M100 110 L100 120" stroke="currentColor" strokeWidth="3" />
-              {/* Legs */}
               <line x1="70" y1="190" x2="70" y2="220" stroke="currentColor" strokeWidth="3" />
               <line x1="130" y1="190" x2="130" y2="220" stroke="currentColor" strokeWidth="3" />
               <line x1="50" y1="190" x2="50" y2="220" stroke="currentColor" strokeWidth="3" />
               <line x1="150" y1="190" x2="150" y2="220" stroke="currentColor" strokeWidth="3" />
-              {/* Tail */}
               <path d="M40 140 Q20 160 40 180" fill="none" stroke="currentColor" strokeWidth="2" />
-              {/* Headset */}
               <ellipse cx="100" cy="50" rx="50" ry="8" fill="none" stroke="currentColor" strokeWidth="2" />
               <circle cx="60" cy="50" r="6" fill="none" stroke="currentColor" strokeWidth="1" />
               <circle cx="140" cy="50" r="6" fill="none" stroke="currentColor" strokeWidth="1" />
-              {/* VR Glasses */}
               <rect x="80" y="60" width="40" height="12" rx="6" fill="none" stroke="currentColor" strokeWidth="2" />
               <line x1="80" y1="66" x2="120" y2="66" stroke="currentColor" strokeWidth="1" />
-              {/* Mic */}
               <path d="M140 70 Q150 80 140 90" fill="none" stroke="currentColor" strokeWidth="1" />
-              {/* Waving Arm */}
               <path d="M160 120 Q180 140 160 160" fill="none" stroke="currentColor" strokeWidth="3" />
               <circle cx="160" cy="140" r="3" fill="none" stroke="currentColor" strokeWidth="1" />
-              {/* Cloud base */}
               <path d="M20 230 Q50 210 80 230 Q110 210 140 230 Q170 210 200 230" fill="none" stroke="currentColor" strokeWidth="2" />
             </svg>
           </div>
@@ -183,8 +168,6 @@ export default function Chat() {
                 disabled={form.value_tile_type === "Clubcard Value Tile"}
               />
             </div>
-
-            {/* Frontend Keyword Hint - Removed for clean UI */}
 
             <div>
               <label style={styles.label}>Style</label>
@@ -309,8 +292,18 @@ export default function Chat() {
             <div style={styles.sectionTitle}>Assets</div>
 
             <div>
-              <label style={styles.label}>Product Image</label>
-              <input type="file" onChange={(e) => setProduct(e.target.files[0])} style={styles.fileInput} />
+              <label style={styles.label}>Product Image(s) (Max 3)</label>
+              <input
+                type="file"
+                multiple
+                onChange={(e) => setProducts(Array.from(e.target.files).slice(0, 3))}
+                style={styles.fileInput}
+              />
+              {products.length > 0 && (
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                  {products.length} file(s) selected
+                </div>
+              )}
             </div>
 
             <div>
@@ -320,7 +313,7 @@ export default function Chat() {
 
             <div style={styles.fullWidth}>
               <button style={styles.button} onClick={() => generate()}>
-                {loading ? <div className="spinner" style={{ width: '20px', height: '20px', borderTopColor: '#fff' }}></div> : "Generate Create"}
+                {loading ? <div className="spinner" style={{ width: '20px', height: '20px', borderTopColor: '#fff' }}></div> : "Generate Creative"}
               </button>
             </div>
           </div>
@@ -416,7 +409,7 @@ export default function Chat() {
               })}
           </div>
         )}
-      </div >
+      </div>
     </>
   );
 }

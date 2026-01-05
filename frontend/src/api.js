@@ -13,10 +13,17 @@ export async function extractSpec(formData) {
   return await res.json();
 }
 
-export async function generateImages(spec, productFile, logoFile, token) {
+export async function generateImages(spec, productFiles, logoFile, token) {
   const formData = new FormData();
   formData.append("spec", JSON.stringify(spec));
-  formData.append("product_image", productFile);
+
+  // Handle single file (legacy) or array of files
+  const products = Array.isArray(productFiles) ? productFiles : [productFiles];
+
+  if (products[0]) formData.append("product_image", products[0]);
+  if (products[1]) formData.append("product_image_2", products[1]);
+  if (products[2]) formData.append("product_image_3", products[2]);
+
   formData.append("logo_image", logoFile);
 
   const headers = {};
@@ -34,7 +41,6 @@ export async function generateImages(spec, productFile, logoFile, token) {
     throw new Error("Image generation failed");
   }
 
-  return await res.json();
   return await res.json();
 }
 

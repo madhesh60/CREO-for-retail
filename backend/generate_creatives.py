@@ -4,9 +4,13 @@ from composer import compose_creative
 from exporter import export_image
 from validator import validate_text_content, validate_image_content, validate_spec
 
-def generate_all(spec, product, logo):
+def generate_all(spec, products, logo):
     outputs = {}
     
+    # Legacy support
+    if not isinstance(products, list):
+        products = [products]
+
     # 0. Spec Validation (Fail Fast)
     spec_errors = validate_spec(spec)
     if spec_errors:
@@ -25,27 +29,29 @@ def generate_all(spec, product, logo):
         spec.get("cta_text", "")
     )
     
-    # 2. Image Validation (People & Alcohol Detection)
-    # We validate the product image (PIL object)
-    img_val = validate_image_content(product)
-    
-    if not img_val["valid"]:
-        # Handle People Detection
-        if img_val.get("type") == "people":
-            if not spec.get("confirm_people", False):
-                validation["valid"] = False
-                validation["errors"].append(img_val["message"])
-                validation["requires_confirmation"] = True
+    # 2. Image Validation (Iterate all products)
+    for prod in products:
+        img_val = validate_image_content(prod)
         
-        # Handle Alcohol Detection
-        elif img_val.get("type") == "alcohol":
-            if not spec.get("confirm_drinkaware", False):
-                validation["valid"] = False
-                validation["errors"].append(img_val["message"])
-                validation["requires_compliance"] = True
-            else:
-                # User confirmed compliance, force alcohol mode in composer
-                spec["is_alcohol"] = True
+        if not img_val["valid"]:
+            # Handle People Detection
+            if img_val.get("type") == "people":
+                if not spec.get("confirm_people", False):
+                    validation["valid"] = False
+                    validation["errors"].append(img_val["message"])
+                    validation["requires_confirmation"] = True
+                    break # Stop at first error
+            
+            # Handle Alcohol Detection
+            elif img_val.get("type") == "alcohol":
+                if not spec.get("confirm_drinkaware", False):
+                    validation["valid"] = False
+                    validation["errors"].append(img_val["message"])
+                    validation["requires_compliance"] = True
+                    break
+                else:
+                    # User confirmed compliance, force alcohol mode in composer
+                    spec["is_alcohol"] = True
 
     outputs["validation"] = validation
 
@@ -57,8 +63,8 @@ def generate_all(spec, product, logo):
         bg = generate_background("clean", W, H, custom_color=spec.get("background_color"))
         
         try:
-            # Pass validation warnings/flags to composer if needed
-            img = compose_creative(bg, product, logo, spec, fmt)
+            # Pass list of products to composer
+            img = compose_creative(bg, products, logo, spec, fmt)
             
             # Requirement: Enable download in final Jpeg and Png.
             # We generate both

@@ -123,22 +123,41 @@ async def extract(
 async def generate_images(
     spec: str = Form(...),
     product_image: UploadFile = Form(...),
+    product_image_2: Optional[UploadFile] = Form(None),
+    product_image_3: Optional[UploadFile] = Form(None),
     logo_image: UploadFile = Form(...),
     authorization: Optional[str] = Header(None) # Manual token extraction for mixed usage
 ):
     spec_dict = json.loads(spec)
 
-    # Read Images
+    # Read Primary Image
     product_bytes = await product_image.read()
     logo_bytes = await logo_image.read()
     
-    product = Image.open(io.BytesIO(product_bytes)).convert("RGBA")
+    products = []
+    
+    # 1. Primary
+    p1 = Image.open(io.BytesIO(product_bytes)).convert("RGBA")
+    products.append(p1)
+    
+    # 2. Secondary
+    if product_image_2:
+        b2 = await product_image_2.read()
+        p2 = Image.open(io.BytesIO(b2)).convert("RGBA")
+        products.append(p2)
+        
+    # 3. Tertiary
+    if product_image_3:
+        b3 = await product_image_3.read()
+        p3 = Image.open(io.BytesIO(b3)).convert("RGBA")
+        products.append(p3)
+
     logo = Image.open(io.BytesIO(logo_bytes)).convert("RGBA")
 
     # Generate for the REQUESTED spec (immediate return)
     primary_outputs = generate_all(
         spec=spec_dict,
-        product=product,
+        products=products,
         logo=logo,
     )
 
@@ -175,7 +194,7 @@ async def generate_images(
             color_spec["background_color"] = color
             
             # Generate
-            color_outputs = generate_all(color_spec, product, logo)
+            color_outputs = generate_all(color_spec, products, logo)
             
             # Identify this batch
             batch_id = str(uuid.uuid4())

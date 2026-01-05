@@ -30,20 +30,56 @@ def add_shadow(img, offset=(0, 10), blur_radius=15, shadow_color=(0, 0, 0, 80)):
     
     return shadow_layer, padding//2
 
-def compose_creative(bg, product, logo, spec, fmt):
+def create_product_group(products, gap=15):
+    """
+    Merges multiple product images into a single linear group.
+    - Removes background for each.
+    - Resizes to common safe height.
+    - Concatenates with spacing.
+    """
+    cleaned_products = [remove_bg(p) for p in products]
+    if not cleaned_products:
+        return None
+        
+    # Standardize height (use the tallest as reference, or average?)
+    # Let's use the first one as anchor or max height.
+    # Ideally, we resize all to the same visual scale. 
+    # Let's define a target reference height.
+    ref_h = max(p.height for p in cleaned_products)
+    
+    resized_products = []
+    for p in cleaned_products:
+        aspect = p.width / p.height
+        new_w = int(ref_h * aspect)
+        resized_products.append(p.resize((new_w, ref_h), Image.Resampling.LANCZOS))
+        
+    # Calculate Total Width
+    total_w = sum(p.width for p in resized_products) + (gap * (len(resized_products) - 1))
+    
+    # Create Canvas
+    group_img = Image.new("RGBA", (total_w, ref_h), (0,0,0,0))
+    
+    # Paste
+    current_x = 0
+    for p in resized_products:
+        group_img.paste(p, (current_x, 0), p)
+        current_x += p.width + gap
+        
+    return group_img
+
+def compose_creative(bg, products, logo, spec, fmt):
     """
     Strict Tesco-Compliant Composer.
-    Features:
-    - Universal Center Alignment (Vertical Stack) for ALL formats including Landscape.
-    - 200px/250px prohibited safe zones for Stories.
-    - Strict visual hierarchy (Headline -> Subhead -> Packshot -> Disclaimer -> Tag -> Drinkaware).
-    - Clubcard Mode: Mandatory Date Check, Fixed Tile Position (Top-Left), Strict Disclaimer.
-    - Rejects layout if space < 50px.
+    Supports Single or Multi-Packshots (up to 3).
     """
     W, H = bg.size
     canvas = bg.copy()
     draw = ImageDraw.Draw(canvas)
-
+    
+    # Input normalization
+    if isinstance(products, Image.Image):
+        products = [products]
+    
     # --- 0. CONTEXT & PRE-GENERATION ---
     full_text = f"{spec.get('main_message', '')} {spec.get('sub_message', '')}".lower()
     # Alcohol check: Explicit flag OR Keyword detection
@@ -89,24 +125,16 @@ def compose_creative(bg, product, logo, spec, fmt):
         current_bottom_y = lockup_y - 20 
 
         # Contrast Check
-        # Sample the background in the lockup area to determine color
-        # Since canvas might be RGBA, we handle transparency if needed, but usually BG is solid.
-        # We'll take a crop of the bottom area
         try:
-            # Crop box: (0, lockup_y, W, lockup_y + alcohol_h)
-            # Resize to 1x1 to get average color
             region = canvas.crop((0, int(lockup_y), int(W), int(lockup_y + alcohol_h)))
             avg_color = region.resize((1, 1)).getpixel((0, 0))
-            
-            # Brightness formula: (R+G+B)/3 or luminance
             if len(avg_color) >= 3:
                 brightness = sum(avg_color[:3]) / 3
             else:
-                brightness = 255 # Default white
-            
+                brightness = 255
             dw_color = "white" if brightness < 128 else "black"
         except Exception:
-            dw_color = "black" # Fallback
+            dw_color = "black"
 
         # Line
         draw.line([(W*0.05, lockup_y), (W*0.95, lockup_y)], fill=dw_color, width=2)
@@ -121,7 +149,6 @@ def compose_creative(bg, product, logo, spec, fmt):
         if tag_fs < 16: tag_fs = 16
         font_tag = load_font("Montserrat-Regular.ttf", tag_fs)
         
-        # Padding
         bbox = draw.textbbox((0, 0), tesco_tag, font=font_tag)
         tag_h = bbox[3] - bbox[1] + 10
         
@@ -134,7 +161,6 @@ def compose_creative(bg, product, logo, spec, fmt):
     if tile_type == "Clubcard Value Tile":
          c_date = spec.get("clubcard_date")
          if not c_date:
-             # STRICT REJECTION
              raise ValueError("Compliance Violation: Clubcard creatives MUST include an end date (DD/MM).")
              
          disclaimer = f"Available in selected stores. Clubcard/app required. Ends {c_date}"
@@ -184,6 +210,9 @@ def compose_creative(bg, product, logo, spec, fmt):
         current_top_y += (bbox_s[3] - bbox_s[1]) + 40 
 
     # --- 5. CENTER CONTENT (Strict Product Centering + Sidekick) ---
+    # Create the Combined Product Group FIRST
+    product = create_product_group(products)
+
     # Strategy: Product is ALWAYS visual center. Sidekick hangs to the right.
     # If Sidekick hits edge, we scale down the Product to make room, but KEEP Product centered.
     
@@ -216,7 +245,8 @@ def compose_creative(bg, product, logo, spec, fmt):
          raise ValueError(f"Compliance Violation: Not enough vertical space ({vp_height}px) for product. Layout rejected.")
 
     # C. Product Prep
-    product = remove_bg(product)
+    # product = remove_bg(product) # REMOVED: Handled in create_product_group
+    # p_ratio = product.width / product.height
     p_ratio = product.width / product.height
     
     # Initial Target Height for Product (85% of viewport)
